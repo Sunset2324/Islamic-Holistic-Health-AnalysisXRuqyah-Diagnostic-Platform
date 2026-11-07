@@ -7,7 +7,7 @@ import ScoreRing from '@/components/dashboard/ScoreRing';
 import { ALGORITHM_VERSION, ASSESSMENT_PERIOD_LABEL, QUESTIONNAIRE_VERSION, SHOW_RUQYAH_TO_PATIENT } from '@/config';
 import { RUQYAH_CONDITIONS } from '@/data/conditions';
 import { INDICATORS, INDICATOR_BY_ID } from '@/data/indicators';
-import { concerningTags, lowIndicators, sanitizeTagSelections, type Answers, type Assessment, type TagSelections } from '@/lib/hhs';
+import { concerningTags, lowIndicators, sanitizeTagSelections, type Answers, type Assessment, type TagSelections } from '@/lib/Hhs';
 import type { RuqyahAssessment } from '@/lib/ruqyah';
 import type { PatientIntake } from '@/types/intake';
 
