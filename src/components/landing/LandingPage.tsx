@@ -33,7 +33,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-700 text-white">
             <Leaf className="h-4 w-4" />
           </span>
-          <span className="text-sm font-bold tracking-tight text-stone-900">Holistik Islami</span>
+          <span className="text-sm font-bold tracking-tight text-stone-900">MyHerbalis</span>
         </div>
         <span className="hidden items-center gap-1.5 text-xs font-medium text-stone-500 sm:flex">
           <ShieldCheck className="h-4 w-4 text-teal-700" />
