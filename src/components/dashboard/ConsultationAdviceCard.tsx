@@ -1,40 +1,39 @@
-import React from 'react';
-import { 
-  Heart, 
-  Moon, 
-  Brain, 
-  BookOpen, 
-  AlertCircle, 
+import {
+  Heart,
+  Moon,
+  Brain,
+  BookOpen,
+  AlertCircle,
   CheckCircle2,
+  Phone,
   Sparkles,
-  Tag 
+  Tag,
 } from 'lucide-react';
-
-// Definisikan tipe ConcerningTag secara fleksibel 
-// (Jika Anda sudah mendefinisikannya di src/types, Anda bisa mengimpornya dari sana)
-interface ConcerningTag {
-  label?: string;
-  name?: string;
-  text?: string;
-  [key: string]: any;
-}
+import { EMERGENCY_NUMBER } from '@/config';
+import type { PillarId } from '@/data/pillars';
+import type { Assessment, ConcerningTag } from '@/lib/Hhs';
 
 interface ConsultationAdviceCardProps {
-  lowestPillar?: 'makan' | 'hidup' | 'pikir' | 'faktorX';
-  ruqyahCondition?: string; 
-  primaryComplaint?: string;
-  concerning?: ConcerningTag[]; // <-- TAMBAHKAN PROP INI
+  assessment: Assessment;
+  concerning?: ConcerningTag[];
 }
 
-const ConsultationAdviceCard: React.FC<ConsultationAdviceCardProps> = ({ 
-  lowestPillar = 'pikir', 
-  ruqyahCondition = "Ketidakseimbangan Umum",
-  primaryComplaint = "Keluhan umum",
-  concerning = [] // <-- Berikan nilai default array kosong
-}) => {
-  
-  const getPriorityAdvice = () => {
-    switch (lowestPillar) {
+/** Pilar dengan skor terendah di antara pilar yang sudah lengkap; seri mengikuti urutan PILLARS. */
+function lowestPillar(assessment: Assessment): PillarId | null {
+  let lowest: PillarId | null = null;
+  let lowestScore = Infinity;
+  for (const result of Object.values(assessment.pillars)) {
+    if (result.score100 !== null && result.score100 < lowestScore) {
+      lowest = result.id;
+      lowestScore = result.score100;
+    }
+  }
+  return lowest;
+}
+
+export default function ConsultationAdviceCard({ assessment, concerning = [] }: ConsultationAdviceCardProps) {
+  const getPriorityAdvice = (pillar: PillarId) => {
+    switch (pillar) {
       case 'makan':
         return {
           icon: <Heart className="w-5 h-5 text-amber-600" />,
@@ -66,12 +65,9 @@ const ConsultationAdviceCard: React.FC<ConsultationAdviceCardProps> = ({
     }
   };
 
-  const priority = getPriorityAdvice();
-
-  // Fungsi bantu untuk mengambil teks dari objek ConcerningTag
-  const getTagLabel = (tag: ConcerningTag) => {
-    return tag.label || tag.name || tag.text || 'Gejala Tidak Dikenal';
-  };
+  const pillar = lowestPillar(assessment);
+  const priority = pillar ? getPriorityAdvice(pillar) : null;
+  const hasConcerning = concerning.length > 0;
 
   return (
     <div className="bg-[#FDFBF7] border border-[#E2E8F0] rounded-2xl p-6 shadow-sm space-y-6">
@@ -88,20 +84,44 @@ const ConsultationAdviceCard: React.FC<ConsultationAdviceCardProps> = ({
         </div>
       </div>
 
-      {/* Concerning Tags / Micro-tags Section (BARU) */}
-      {concerning.length > 0 && (
+      {/* Anjuran konsultasi: lebih tegas bila ada Micro-Tag yang mengkhawatirkan */}
+      {hasConcerning ? (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 space-y-3" role="alert">
+          <h4 className="font-semibold text-rose-900">Kami menganjurkan Anda segera berkonsultasi</h4>
+          <p className="text-sm text-rose-900 leading-relaxed">
+            Hal yang Anda pilih penting untuk dibicarakan dengan konsultan secepatnya. Anda tidak sendirian, dan ini bukan kesalahan Anda.
+          </p>
+          <p className="text-sm text-rose-900 leading-relaxed">
+            Jika kapan pun Anda merasa tidak aman atau terpikir untuk menyakiti diri, segera hubungi {EMERGENCY_NUMBER} atau datang ke fasilitas kesehatan terdekat.
+          </p>
+          <a
+            href={`tel:${EMERGENCY_NUMBER}`}
+            className="inline-flex items-center gap-2 rounded-lg bg-rose-700 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-800"
+          >
+            <Phone className="w-4 h-4" aria-hidden />
+            Hubungi {EMERGENCY_NUMBER}
+          </a>
+        </div>
+      ) : (
+        <p className="rounded-xl border border-stone-200 bg-white p-4 text-sm text-slate-700 leading-relaxed">
+          <span className="font-semibold">Tetap berkonsultasi.</span> Ini hasil sementara dan belum menggantikan konsultasi. Kami menganjurkan Anda tetap berkonsultasi dengan konsultan agar hasilnya dapat ditelaah bersama.
+        </p>
+      )}
+
+      {/* Micro-Tag yang mengkhawatirkan */}
+      {hasConcerning && (
         <div className="space-y-3">
           <h4 className="font-semibold text-slate-800 flex items-center gap-2">
             <Tag className="w-5 h-5 text-rose-600" />
             Gejala / Catatan Khusus Terdeteksi
           </h4>
           <div className="flex flex-wrap gap-2">
-            {concerning.map((tag, index) => (
-              <span 
-                key={index} 
+            {concerning.map((tag) => (
+              <span
+                key={`${tag.indicatorId}-${tag.tagId}`}
                 className="px-3 py-1.5 bg-rose-50 text-rose-700 text-sm font-medium rounded-full border border-rose-200 shadow-sm"
               >
-                {getTagLabel(tag)}
+                {tag.label}
               </span>
             ))}
           </div>
@@ -109,6 +129,7 @@ const ConsultationAdviceCard: React.FC<ConsultationAdviceCardProps> = ({
       )}
 
       {/* Priority Focus Area */}
+      {priority && (
       <div className="bg-white border border-amber-200 rounded-xl p-4 shadow-sm">
         <div className="flex items-center gap-2 mb-2">
           {priority.icon}
@@ -121,8 +142,10 @@ const ConsultationAdviceCard: React.FC<ConsultationAdviceCardProps> = ({
           </p>
         </div>
       </div>
+      )}
 
-      {/* Spiritual & Ruqyah Mandiri Section */}
+      {/* TODO (perlu review tim): isi amalan di bawah masih draf, belum bersumber dari HHS/blueprint.
+          Penilaian ruqyah direncanakan menjadi wewenang konsultan, bukan anjuran mandiri ke pasien. */}
       <div className="space-y-3">
         <h4 className="font-semibold text-slate-800 flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-emerald-600" />
@@ -159,11 +182,9 @@ const ConsultationAdviceCard: React.FC<ConsultationAdviceCardProps> = ({
         <p className="text-xs text-slate-600 leading-relaxed">
           <span className="font-semibold">Catatan Penting:</span> Rekomendasi ini bersifat edukatif untuk mendukung gaya hidup sehat dan spiritual. 
           Platform ini <span className="font-semibold">bukan pengganti diagnosis medis profesional</span>. 
-          Jika gejala {primaryComplaint.toLowerCase()} berlanjut atau memburuk, segera konsultasikan dengan dokter atau Ustadz Ruqyah bersertifikat secara langsung.
+          Jika keluhan Anda berlanjut atau memburuk, segera konsultasikan dengan dokter atau konsultan secara langsung.
         </p>
       </div>
     </div>
   );
-};
-
-export default ConsultationAdviceCard;
+}

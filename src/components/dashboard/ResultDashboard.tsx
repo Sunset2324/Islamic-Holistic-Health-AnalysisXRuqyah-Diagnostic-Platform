@@ -81,7 +81,7 @@ export default function ResultDashboard({
         </div>
 
         <div className="animate-fade-up" style={{ animationDelay: '60ms' }}>
-          <ConsultationAdviceCard concerning={concerning} />
+          <ConsultationAdviceCard assessment={assessment} concerning={concerning} />
         </div>
 
         {assessment.complete && assessment.hhs100Display !== null && assessment.category !== null ? (
