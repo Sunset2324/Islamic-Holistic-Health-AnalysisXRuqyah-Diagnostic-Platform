@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeAssessment } from '@/lib/hhs';
+import { computeAssessment } from '@/lib/Hhs';
 import { assessRuqyah, type RuqyahAssessment } from '@/lib/ruqyah';
 import { answersFromSums, type PillarSums } from '@/lib/test-helpers';
 

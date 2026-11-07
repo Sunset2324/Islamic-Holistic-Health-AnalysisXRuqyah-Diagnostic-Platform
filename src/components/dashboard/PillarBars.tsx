@@ -1,7 +1,7 @@
 import { Activity, Brain, Sparkles, Utensils, type LucideIcon } from 'lucide-react';
 import { INDICATORS, MICRO_TAG_MAX_SCORE } from '@/data/indicators';
 import { PILLARS, type PillarId } from '@/data/pillars';
-import { isValidScore, type Answers, type Assessment } from '@/lib/hhs';
+import { isValidScore, type Answers, type Assessment } from '@/lib/Hhs';
 import { DROP_THRESHOLD } from '@/lib/ruqyah';
 
 interface PillarBarsProps {

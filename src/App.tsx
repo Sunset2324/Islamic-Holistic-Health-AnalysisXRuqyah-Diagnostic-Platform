@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import EmergencyFooter from '@/components/common/EmergencyFooter';
+import EmergencyFooter from '@/components/common/Emergencyfooters';
 import LandingPage from '@/components/landing/LandingPage';
 import PatientIntakeForm from '@/components/intake/PatientIntakeForm';
 import AnalysisLoader from '@/components/questionnaire/AnalysisLoader';

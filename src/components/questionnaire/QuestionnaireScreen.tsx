@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { ASSESSMENT_PERIOD_LABEL } from '@/config';
 import { INDICATORS, MAX_OTHER_NOTE_LENGTH, MICRO_TAG_MAX_SCORE, type IndicatorId } from '@/data/indicators';
 import { PILLAR_BY_ID } from '@/data/pillars';
-import type { Answers, TagSelection, TagSelections } from '@/lib/hhs';
+import type { Answers, TagSelection, TagSelections } from '@/lib/Hhs';
 
 interface QuestionnaireScreenProps {
   answers: Answers;

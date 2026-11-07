@@ -1,7 +1,7 @@
 import { ShieldAlert, ShieldCheck } from 'lucide-react';
 import { RUQYAH_CONDITIONS } from '@/data/conditions';
 import { PILLAR_BY_ID } from '@/data/pillars';
-import { lowIndicators, type Answers } from '@/lib/hhs';
+import { lowIndicators, type Answers } from '@/lib/Hhs';
 import type { RuqyahAssessment, SuggestionStrength } from '@/lib/ruqyah';
 
 interface RuqyahAlertCardProps {

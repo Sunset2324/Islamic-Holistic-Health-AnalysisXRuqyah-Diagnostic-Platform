@@ -1,6 +1,6 @@
 import type { RuqyahConditionId } from '@/data/conditions';
 import { PILLARS, type PillarId } from '@/data/pillars';
-import { INDICATORS_PER_PILLAR, percentFromSum, type Assessment } from '@/lib/hhs';
+import { INDICATORS_PER_PILLAR, percentFromSum, type Assessment } from '@/lib/Hhs';
 
 // Ambang dari blueprint v1.1 (Mesin 2), dipetakan ke skala 1-5. Belum tervalidasi secara klinis.
 export const DROP_THRESHOLD = 40;

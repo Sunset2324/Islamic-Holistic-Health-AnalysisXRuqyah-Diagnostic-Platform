@@ -1,6 +1,6 @@
 import { INDICATORS, type IndicatorId } from '@/data/indicators';
 import type { PillarId } from '@/data/pillars';
-import type { Answers } from '@/lib/hhs';
+import type { Answers } from '@/lib/Hhs';
 
 /** Membagi jumlah 3..15 menjadi tiga skor 1..5 yang valid. Hanya untuk test. */
 export function splitSum(sum: number): [number, number, number] {

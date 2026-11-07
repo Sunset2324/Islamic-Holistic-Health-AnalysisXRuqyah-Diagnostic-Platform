@@ -9,7 +9,7 @@ import {
   percentFromSum,
   sanitizeTagSelections,
   type Answers,
-} from '@/lib/hhs';
+} from '@/lib/Hhs';
 import { answersFromSums } from '@/lib/test-helpers';
 
 const allScores = (score: number): Answers => Object.fromEntries(INDICATORS.map((indicator) => [indicator.id, score]));
