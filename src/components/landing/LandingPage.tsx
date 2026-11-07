@@ -4,9 +4,6 @@ interface LandingPageProps {
   onStart: () => void;
 }
 
-const HERO_IMAGE =
-  'https://images.pexels.com/photos/35382432/pexels-photo-35382432.jpeg?auto=compress&cs=tinysrgb&h=650&w=940';
-
 const FEATURES = [
   {
     icon: Activity,
@@ -77,11 +74,13 @@ export default function LandingPage({ onStart }: LandingPageProps) {
 
           <div className="animate-fade-up relative" style={{ animationDelay: '120ms' }}>
             <div className="overflow-hidden rounded-3xl shadow-2xl shadow-stone-900/10">
-              <img
-                src={HERO_IMAGE}
-                alt="Interior masjid yang tenang dengan cahaya lembut"
-                className="aspect-[4/3] w-full object-cover"
-              />
+              <div
+                role="img"
+                aria-label="Logo MyHerbalis: daun dan bulan sabit di atas latar hijau"
+                className="flex aspect-[4/3] w-full items-center justify-center bg-gradient-to-br from-teal-900 via-teal-700 to-teal-500"
+              >
+                <img src="/favicon.svg" alt="" className="h-40 w-40 drop-shadow-xl" />
+              </div>
             </div>
             <div className="absolute -bottom-5 left-6 right-6 rounded-2xl border border-stone-200 bg-white/95 p-4 shadow-lg backdrop-blur sm:left-[-1.5rem] sm:right-auto sm:w-80">
 
