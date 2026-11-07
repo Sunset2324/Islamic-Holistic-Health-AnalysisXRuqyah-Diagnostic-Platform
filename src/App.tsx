@@ -6,7 +6,7 @@ import AnalysisLoader from '@/components/questionnaire/AnalysisLoader';
 import QuestionnaireScreen from '@/components/questionnaire/QuestionnaireScreen';
 import ResultDashboard from '@/components/dashboard/ResultDashboard';
 import type { IndicatorId } from '@/data/indicators';
-import { computeAssessment, sanitizeTagSelections, type Answers, type TagSelection, type TagSelections } from '@/lib/hhs';
+import { computeAssessment, sanitizeTagSelections, type Answers, type TagSelection, type TagSelections } from '@/lib/Hhshs';
 import { assessRuqyah } from '@/lib/ruqyah';
 import type { PatientIntake } from '@/types/intake';
 
