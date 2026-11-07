@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>MyHerbalis</title>
+  <rect width="64" height="64" rx="14" fill="#0f766e"/>
+  <!-- bulan sabit -->
+  <circle cx="45" cy="18" r="9.5" fill="#fcd34d"/>
+  <circle cx="49" cy="15" r="8.4" fill="#0f766e"/>
+  <!-- daun -->
+  <path d="M13 51C13 38 23 29 46 28C46 43 36 53 21 53C18 53 15.300 52.300 13 51Z" fill="#ffffff"/>
+  <path d="M16 50C23 42 31 36 42 32" fill="none" stroke="#0f766e" stroke-width="2.4" stroke-linecap="round"/>
+</svg>
