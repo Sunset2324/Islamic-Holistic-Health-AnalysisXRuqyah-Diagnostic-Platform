@@ -52,8 +52,9 @@ export default function LandingPage({ onStart }: LandingPageProps) {
               Kenali tubuh, sehatkan pikiran, kuatkan iman.
             </h1>
             <p className="max-w-xl text-base leading-[1.5] text-stone-600">
-              Jawab 100 pertanyaan yang tenang dan empatik. Kami membaca gaya hidup Anda melalui medis,
-              TCM, dan Thibbunnabawi, lalu memberi langkah perbaikan yang bisa dijalani pelan-pelan.
+              Jawab 12 pertanyaan singkat yang tenang dan empatik tentang 7 hari terakhir Anda. Kami membaca gaya
+              hidup Anda melalui medis, TCM, dan Thibbunnabawi, lalu memberi langkah perbaikan yang bisa dijalani
+              pelan-pelan.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <button
@@ -64,8 +65,14 @@ export default function LandingPage({ onStart }: LandingPageProps) {
                 Mulai Analisis
                 <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
               </button>
-              <p className="text-xs text-stone-500">Sekitar 10 menit, dapat dihentikan kapan saja.</p>
+              <p className="text-xs text-stone-500">
+                Sekitar 3–5 menit. Pertanyaan yang tidak ingin dijawab boleh dilewati.
+              </p>
             </div>
+            <p className="max-w-xl text-xs leading-[1.5] text-stone-500">
+              Dengan menekan &quot;Mulai Analisis&quot;, Anda menyetujui jawaban Anda digunakan untuk menyusun hasil ini
+              dan dibahas bersama konsultan. Hasil ini bukan diagnosis medis.
+            </p>
           </div>
 
           <div className="animate-fade-up relative" style={{ animationDelay: '120ms' }}>
