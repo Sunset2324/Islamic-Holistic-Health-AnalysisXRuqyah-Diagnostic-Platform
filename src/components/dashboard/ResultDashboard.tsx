@@ -51,7 +51,7 @@ export default function ResultDashboard({
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-700 text-white">
               <Leaf className="h-4 w-4" />
             </span>
-            <span className="text-sm font-bold tracking-tight text-stone-900">Holistik Islami</span>
+            <span className="text-sm font-bold tracking-tight text-stone-900">MyHerSbalis</span>
           </div>
           <button
             type="button"
