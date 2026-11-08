@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Cetak laporan konsultan: hanya laporan untuk pasien yang tercetak. */
+@media print {
+  body * { visibility: hidden; }
+  #patient-report, #patient-report * { visibility: visible; }
+  #patient-report { position: absolute; left: 0; top: 0; width: 100%; border: 0; }
+}

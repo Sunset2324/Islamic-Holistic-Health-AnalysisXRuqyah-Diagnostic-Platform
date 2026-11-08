@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import ConsultantPrototype from '@/components/consultant/ConsultantPrototype';
 import EmergencyFooter from '@/components/common/Emergencyfooters';
 import LandingPage from '@/components/landing/LandingPage';
 import PatientIntakeForm from '@/components/intake/PatientIntakeForm';
@@ -13,6 +14,8 @@ import type { PatientIntake } from '@/types/intake';
 type Step = 'landing' | 'intake' | 'questionnaire' | 'loading' | 'dashboard';
 
 function App() {
+  // Prototipe konsultan: buka dengan alamat #/konsultan. Belum ada router sungguhan.
+  const isConsultantPrototype = typeof window !== 'undefined' && window.location.hash.startsWith('#/konsultan');
   const [step, setStep] = useState<Step>('landing');
   const [patient, setPatient] = useState<PatientIntake | null>(null);
   const [answers, setAnswers] = useState<Answers>({});
@@ -50,6 +53,8 @@ function App() {
     setAssessmentDate(null);
     setStep('landing');
   }
+
+  if (isConsultantPrototype) return <ConsultantPrototype />;
 
   let screen;
   if (step === 'intake') {
