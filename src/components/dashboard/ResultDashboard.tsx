@@ -21,6 +21,8 @@ interface ResultDashboardProps {
   onRestart: () => void;
   /** Kembali mengisi indikator tertentu (indeks 0-11). */
   onCompleteAnswers: (indicatorIndex: number) => void;
+  /** Penyimpanan ke server (opsional; tanpa ini halaman bekerja sepenuhnya di perangkat). */
+  submissionPanel?: React.ReactNode;
 }
 
 const dateFormat = new Intl.DateTimeFormat('id-ID', { dateStyle: 'long', timeStyle: 'short' });
@@ -34,6 +36,7 @@ export default function ResultDashboard({
   assessmentDate,
   onRestart,
   onCompleteAnswers,
+  submissionPanel,
 }: ResultDashboardProps) {
   const greetingName = patient.name || 'Anda';
   const tags = sanitizeTagSelections(answers, tagSelections);
@@ -83,6 +86,8 @@ export default function ResultDashboard({
         <div className="animate-fade-up" style={{ animationDelay: '60ms' }}>
           <ConsultationAdviceCard assessment={assessment} concerning={concerning} />
         </div>
+
+        {submissionPanel}
 
         {assessment.complete && assessment.hhs100Display !== null && assessment.category !== null ? (
           <div className="animate-fade-up grid gap-6 lg:grid-cols-2" style={{ animationDelay: '100ms' }}>

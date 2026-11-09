@@ -20,6 +20,10 @@ function siteUrl(mode: string): Plugin {
   };
 }
 
+// Alamat API untuk pengembangan/preview. Produksi: reverse proxy yang menyajikan /api dan frontend dari satu origin.
+const apiTarget = process.env.API_PROXY_TARGET ?? 'http://localhost:3000';
+const apiProxy = { '/api': { target: apiTarget, changeOrigin: false } };
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   plugins: [react(), siteUrl(mode)],
@@ -28,6 +32,8 @@ export default defineConfig(({ mode }) => ({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: { proxy: apiProxy },
+  preview: { proxy: apiProxy },
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
