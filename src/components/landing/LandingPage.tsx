@@ -1,7 +1,10 @@
+import type { ReactNode } from 'react';
 import { Activity, ArrowRight, Brain, Leaf, ShieldAlert, ShieldCheck, Sparkles, Stethoscope } from 'lucide-react';
 
 interface LandingPageProps {
   onStart: () => void;
+  /** Informasi data tersimpan di perangkat (opsional). */
+  banner?: ReactNode;
 }
 
 const FEATURES = [
@@ -22,7 +25,7 @@ const FEATURES = [
   },
 ];
 
-export default function LandingPage({ onStart }: LandingPageProps) {
+export default function LandingPage({ onStart, banner }: LandingPageProps) {
   return (
     <div className="min-h-screen bg-stone-50 text-stone-800">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
@@ -66,6 +69,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
                 Sekitar 3–5 menit. Pertanyaan yang tidak ingin dijawab boleh dilewati.
               </p>
             </div>
+            {banner}
             <p className="max-w-xl text-xs leading-[1.5] text-stone-500">
               Dengan menekan &quot;Mulai Analisis&quot;, Anda menyetujui jawaban Anda digunakan untuk menyusun hasil ini
               dan dibahas bersama konsultan. Hasil ini bukan diagnosis medis.
