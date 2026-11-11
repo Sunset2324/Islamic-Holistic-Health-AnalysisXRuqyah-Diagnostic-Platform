@@ -1,0 +1,20 @@
+[Unit]
+Description=MyHerbalis hapus respons kedaluwarsa
+After=postgresql.service
+
+[Service]
+Type=oneshot
+User=myherbalis-purge
+Group=myherbalis-purge
+ExecStart=/opt/myherbalis/deploy/purge.sh
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+LockPersonality=true
+SystemCallArchitectures=native
+UMask=0077
