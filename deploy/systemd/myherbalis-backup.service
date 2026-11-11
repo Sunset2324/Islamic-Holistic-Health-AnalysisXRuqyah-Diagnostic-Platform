@@ -1,0 +1,23 @@
+[Unit]
+Description=MyHerbalis backup terenkripsi
+After=postgresql.service
+
+[Service]
+Type=oneshot
+User=myherbalis-backup
+Group=myherbalis-backup
+# Opsional: isi UPLOAD_CMD (mis. rsync/rclone ke tempat lain) di berkas ini. WAJIB di produksi.
+EnvironmentFile=-/etc/myherbalis/backup.env
+ExecStart=/opt/myherbalis/deploy/backup.sh
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/backups/myherbalis
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+LockPersonality=true
+SystemCallArchitectures=native
+UMask=0077

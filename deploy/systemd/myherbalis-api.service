@@ -1,0 +1,42 @@
+[Unit]
+Description=MyHerbalis API
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+User=myherbalis
+Group=myherbalis
+WorkingDirectory=/opt/myherbalis/server
+EnvironmentFile=/etc/myherbalis/api.env
+ExecStart=/usr/bin/node /opt/myherbalis/server/node_modules/tsx/dist/cli.mjs src/server.ts
+Restart=on-failure
+RestartSec=3
+
+# Hardening. MemoryDenyWriteExecute sengaja TIDAK dipasang: mesin JIT Node.js (V8) membutuhkan memori W+X.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+CapabilityBoundingSet=
+AmbientCapabilities=
+UMask=0077
+# Layanan hanya boleh bicara dengan localhost (nginx di depan, Postgres di belakang).
+IPAddressDeny=any
+IPAddressAllow=localhost
+
+[Install]
+WantedBy=multi-user.target
