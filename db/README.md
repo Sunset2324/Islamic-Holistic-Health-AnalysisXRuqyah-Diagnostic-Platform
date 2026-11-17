@@ -1,5 +1,7 @@
 # Skema PostgreSQL (tanpa Supabase) - draf untuk review
 
+> Ada port MySQL 8.0 di `db/mysql/` (lihat `db/mysql/README.md`). Skema PostgreSQL di bawah masih dipakai backend `server/` sampai backend dipindahkan.
+
 Menggantikan pendekatan `supabase/` (folder itu **draf lama**, sengaja dibiarkan; skema di sini tidak memakai `auth.uid()`, peran `anon/authenticated`, atau RPC Supabase).
 Isi: `migrations/0001_init.sql` dan `tests/flow.sql` (104 kasus PASS/FAIL). Belum ada kode backend yang memakainya. Tidak ada kunci/URL di file ini.
 

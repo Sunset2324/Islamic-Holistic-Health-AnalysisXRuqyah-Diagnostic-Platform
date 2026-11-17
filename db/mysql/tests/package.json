@@ -1,0 +1,7 @@
+{
+  "name": "myherbalis-db-mysql-tests",
+  "private": true,
+  "type": "module",
+  "description": "Uji alur skema MySQL (jalankan lewat test-with-mysql.sh)",
+  "dependencies": { "mysql2": "3.11.3" }
+}
