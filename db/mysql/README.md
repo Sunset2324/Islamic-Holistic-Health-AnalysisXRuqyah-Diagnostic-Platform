@@ -40,7 +40,7 @@ Hasil dikembalikan sebagai result set (baris pertama dari `CALL`). `accept_acces
 ## Perbedaan perilaku yang perlu diketahui (fakta dari uji, bukan asumsi)
 - `FOREIGN KEY ... ON DELETE SET NULL/CASCADE` tidak mengaktifkan trigger, sehingga `consultations.source_submission_id` yang menjadi NULL karena respons dihapus **tidak** tercatat di audit (di PostgreSQL tercatat).
 - Variabel sesi `@app_actor_id`/`@app_audit_reason` untuk audit disetel oleh prosedur sebelum menulis. Tulisan langsung oleh pemilik skema memakai nilai yang tersisa di sesi itu.
-- Mutasi yang diuji dan **terdeteksi** (13): hak SELECT bocor, filter pemilik hilang, unique laporan terkini hilang, flag berbagi diabaikan, rollback handler hilang, purge tanpa filter kedaluwarsa, cek admin salah, cek akun nonaktif hilang, trigger append-only hilang, ambang kunci salah, audit menyalin ciphertext, cek saran konsultan hilang, cek rekam milik akun lain hilang, serta hilangnya seluruh kunci baris pada penerimaan kode.
+- Mutasi yang diuji dan **terdeteksi** (14): hak SELECT bocor, filter pemilik hilang, unique laporan terkini hilang, flag berbagi diabaikan, rollback handler hilang, purge tanpa filter kedaluwarsa, cek admin salah, cek akun nonaktif hilang, trigger append-only hilang, ambang kunci salah, audit menyalin ciphertext, cek saran konsultan hilang, cek rekam milik akun lain hilang, serta hilangnya seluruh kunci baris pada penerimaan kode.
   Satu mutasi **tidak terdeteksi**: menghapus `FOR UPDATE` pada baris `access_codes` saja. Ini aman karena kunci pada `submissions` tetap menjaga sekali pakai (mutasi ekuivalen, lapisan kedua).
 
 ## Peringatan hosting
