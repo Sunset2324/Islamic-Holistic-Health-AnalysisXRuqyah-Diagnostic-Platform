@@ -3,7 +3,7 @@ import type { AppConfig } from '../src/config.js';
 import { parseKeyRing } from '../src/crypto.js';
 import type { SubmissionBody } from '../src/validation.js';
 
-export function testConfig(databaseUrl = 'postgres://unused'): AppConfig {
+export function testConfig(databaseUrl = 'mysql://unused@127.0.0.1/unused'): AppConfig {
   const keyRing = parseKeyRing({
     DATA_KEY_V1: randomBytes(32).toString('base64'),
     DATA_KEY_V2: randomBytes(32).toString('base64'),

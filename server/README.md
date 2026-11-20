@@ -19,9 +19,15 @@ npm run dev
 ```
 Variabel `.env` belum dibaca otomatis; muat dengan `node --env-file=.env` atau lewat environment hosting.
 
+## Database
+MariaDB/MySQL (Hostinger: MariaDB 11.8). Skema: file impor `myherbalis_hostinger_mariadb_11_8.sql`
+(tanpa trigger/procedure). Logika yang dulu ada di fungsi SQL Postgres sekarang di `src/routes/submissions.ts`:
+setiap query memakai prepared statement, dan penerbitan kode akses dijalankan dalam transaksi `SELECT ... FOR UPDATE`.
+Dari aplikasi di Hostinger, `DATABASE_URL` memakai host `127.0.0.1`, bukan `srvNNNN.hstgr.io`.
+
 ## Tes
 ```bash
-npm test                      # tes unit (crypto, gambar); tes database dilewati
-./scripts/test-with-pg.sh     # tes lengkap di Postgres sementara (butuh binari Postgres 16)
+npm test     # tes unit (crypto, gambar); tes database dilewati bila TEST_DATABASE_URL tidak ada
+TEST_DATABASE_URL=mysql://... TEST_ADMIN_URL=mysql://... npm test   # tes lengkap di database uji (JANGAN database produksi)
 ```
-Lihat `docs/KEAMANAN-PRIVASI.md` dan `db/README.md`.
+Lihat `docs/KEAMANAN-PRIVASI.md`.
