@@ -31,3 +31,22 @@ npm test     # tes unit (crypto, gambar); tes database dilewati bila TEST_DATABA
 TEST_DATABASE_URL=mysql://... TEST_ADMIN_URL=mysql://... npm test   # tes lengkap di database uji (JANGAN database produksi)
 ```
 Lihat `docs/KEAMANAN-PRIVASI.md`.
+
+## Deploy di Hostinger (Node.js, tanpa nginx)
+Satu proses Node menyajikan frontend (`dist/`) **dan** `/api`, dengan header keamanan setara `deploy/nginx/`.
+
+| Setelan Node.js di hPanel | Nilai |
+|---|---|
+| Framework / app type | Express (server app) |
+| Node.js | 22 |
+| Root directory | `.` (akar repo) |
+| Build script | `build:hostinger` (= `vite build` + instal dependensi `server/`) |
+| Entry file | `server/start.mjs` |
+
+Variabel environment (isi sendiri di hPanel, jangan dikirim ke siapa pun): `DATABASE_URL`, `HMAC_PEPPER`,
+`DATA_KEY_V1`, `DATA_KEY_CURRENT`, `PORT`, `TRUST_PROXY`.
+- `DATABASE_URL=mysql://USER:PASSWORD@127.0.0.1:3306/NAMA_DB` (password di-URL-encode bila ada karakter khusus).
+- `HMAC_PEPPER` dan `DATA_KEY_V1`: buat di komputer sendiri, masing-masing
+  `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Simpan cadangannya di tempat aman:
+  kehilangan `DATA_KEY_V1` = data terenkripsi tidak bisa dibaca lagi.
+- `DATA_KEY_CURRENT=1`, `TRUST_PROXY=true` (hanya proxy terdekat yang dipercaya). `PORT` biasanya diisi hosting.
