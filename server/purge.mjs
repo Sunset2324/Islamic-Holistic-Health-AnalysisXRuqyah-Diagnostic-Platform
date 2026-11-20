@@ -1,7 +1,7 @@
-// Dijalankan cron (Hostinger: hPanel -> Advanced -> Cron Jobs), mis. tiap jam:
-//   /opt/alt/alt-nodejs22/root/bin/node /home/<user>/domains/<domain>/hbuilds/current/nodejs/server/purge.mjs
-// Cron tidak mewarisi variabel environment aplikasi, jadi bila DATABASE_URL belum ada, berkas .env yang ditulis
-// Hostinger di akar aplikasi (satu tingkat di atas folder server/) dimuat. Berkas itu tidak pernah dicetak.
+// Dijalankan cron (Hostinger: hPanel -> Advanced -> Cron Jobs), tiap jam:
+//   /opt/alt/alt-nodejs22/root/bin/node --env-file=/home/<user>/domains/<domain>/hbuilds/config/.env //     /home/<user>/domains/<domain>/hbuilds/current/nodejs/server/purge.mjs
+// Cron tidak mewarisi variabel environment aplikasi; Hostinger menyimpannya di hbuilds/config/.env.
+// Cadangan: bila DATABASE_URL tetap belum ada, .env di akar aplikasi (di luar Hostinger) dimuat. Isinya tidak pernah dicetak.
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { register } from 'tsx/esm/api';
