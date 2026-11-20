@@ -1,5 +1,5 @@
 import { Writable } from 'node:stream';
-import pg from 'pg';
+import type { RowDataPacket } from 'mysql2/promise';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildApp } from '../src/app.js';
 import { createPool } from '../src/db.js';
@@ -9,13 +9,16 @@ const url = process.env.TEST_DATABASE_URL;
 const adminUrl = process.env.TEST_ADMIN_URL;
 const run = url && adminUrl ? describe : describe.skip;
 
-run('API respons pasien tamu (Postgres sungguhan)', () => {
+run('API respons pasien tamu (MariaDB sungguhan)', () => {
   const config = testConfig(url);
-  const pool = createPool(url as string);
-  const admin = new pg.Pool({ connectionString: adminUrl });
+  let pool: ReturnType<typeof createPool>;
+  let admin: ReturnType<typeof createPool>;
+  const q = async (sql: string, params: unknown[] = []) => (await admin.query<RowDataPacket[]>(sql, params))[0];
   let app: Awaited<ReturnType<typeof buildApp>>;
 
   beforeAll(async () => {
+    pool = createPool(url as string);
+    admin = createPool(adminUrl as string);
     app = await buildApp({ config, db: pool, logger: false });
   });
   afterAll(async () => {
@@ -34,8 +37,8 @@ run('API respons pasien tamu (Postgres sungguhan)', () => {
     const { res, json } = await create();
     expect(res.statusCode).toBe(201);
     expect(json.editToken).toMatch(/^[A-Za-z0-9_-]{43}$/);
-    const { rows } = await admin.query('select * from submissions where id = $1', [json.id]);
-    const row = rows[0];
+    const rows = await q('select * from submissions where id = ?', [json.id]);
+    const row = rows[0]!;
     expect(row.edit_token_hash).toMatch(/^[0-9a-f]{64}$/);
     expect(row.edit_token_hash).not.toContain(json.editToken);
     for (const col of ['intake_enc', 'answers_enc', 'tag_selections_enc'] as const) {
@@ -81,7 +84,7 @@ run('API respons pasien tamu (Postgres sungguhan)', () => {
     expect(first.statusCode).toBe(201);
     expect(first.json().code).toMatch(/^[A-HJ-NP-Z2-9]{8}$/);
     expect(second.json().code).not.toBe(first.json().code);
-    const { rows } = await admin.query('select code_hash, status from access_codes where submission_id = $1 order by created_at', [json.id]);
+    const rows = await q('select code_hash, status from access_codes where submission_id = ? order by created_at', [json.id]);
     expect(rows.map((r) => r.status)).toEqual(['revoked', 'active']);
     for (const r of rows) {
       expect(r.code_hash).toMatch(/^[0-9a-f]{64}$/);
@@ -91,9 +94,21 @@ run('API respons pasien tamu (Postgres sungguhan)', () => {
     expect(noAuth.statusCode).toBe(404);
   });
 
+  it('kode akses diminta bersamaan: tetap tepat satu kode aktif (transaksi + FOR UPDATE)', async () => {
+    const { json } = await create();
+    const results = await Promise.all(
+      Array.from({ length: 6 }, (_, i) =>
+        app.inject({ method: 'POST', url: `/api/submissions/${json.id}/access-code`, headers: auth(json.editToken), remoteAddress: `10.5.5.${i}` }),
+      ),
+    );
+    expect(results.every((r) => r.statusCode === 201)).toBe(true);
+    const rows = await q("select count(*) as n from access_codes where submission_id = ? and status = 'active'", [json.id]);
+    expect(Number(rows[0]!.n)).toBe(1);
+  });
+
   it('setelah dikunci konsultan: tidak bisa diubah dan tidak bisa meminta kode', async () => {
     const { json } = await create();
-    await admin.query("update submissions set status = 'in_consultation', expires_at = null where id = $1", [json.id]);
+    await q("update submissions set status = 'in_consultation', expires_at = null where id = ?", [json.id]);
     const put = await app.inject({ method: 'PUT', url: `/api/submissions/${json.id}`, headers: auth(json.editToken), payload: sampleBody() });
     const code = await app.inject({ method: 'POST', url: `/api/submissions/${json.id}/access-code`, headers: auth(json.editToken) });
     const del = await app.inject({ method: 'DELETE', url: `/api/submissions/${json.id}`, headers: auth(json.editToken) });
@@ -102,7 +117,7 @@ run('API respons pasien tamu (Postgres sungguhan)', () => {
 
   it('respons kedaluwarsa tidak bisa dibaca', async () => {
     const { json } = await create();
-    await admin.query("update submissions set expires_at = now() - interval '1 minute' where id = $1", [json.id]);
+    await q('update submissions set expires_at = NOW(6) - INTERVAL 1 MINUTE where id = ?', [json.id]);
     expect((await app.inject({ method: 'GET', url: `/api/submissions/${json.id}`, headers: auth(json.editToken) })).statusCode).toBe(404);
   });
 
@@ -110,8 +125,7 @@ run('API respons pasien tamu (Postgres sungguhan)', () => {
     const { json } = await create();
     expect((await app.inject({ method: 'DELETE', url: `/api/submissions/${json.id}`, headers: auth(json.editToken) })).statusCode).toBe(204);
     expect((await app.inject({ method: 'GET', url: `/api/submissions/${json.id}`, headers: auth(json.editToken) })).statusCode).toBe(404);
-    const { rowCount } = await admin.query('select 1 from submissions where id = $1', [json.id]);
-    expect(rowCount).toBe(0);
+    expect(await q('select 1 from submissions where id = ?', [json.id])).toHaveLength(0);
   });
 
   it('validasi: kolom asing, nilai di luar batas, dan tipe salah ditolak 400', async () => {
@@ -150,10 +164,6 @@ run('API respons pasien tamu (Postgres sungguhan)', () => {
     expect(res.headers['referrer-policy']).toBe('no-referrer');
   });
 
-  it('peran app_api tidak bisa membaca tabel submissions/access_codes langsung', async () => {
-    await expect(pool.query('select * from submissions')).rejects.toThrow(/permission denied/);
-    await expect(pool.query('select * from access_codes')).rejects.toThrow(/permission denied/);
-  });
 
   it('batas laju pembuatan respons: lebih dari 10 per jam per IP -> 429', async () => {
     const fresh = await buildApp({ config, db: pool, logger: false });

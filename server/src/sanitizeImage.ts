@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import sharp from 'sharp';
+import sharp, { type OutputInfo } from 'sharp';
 
 /**
  * Pembersih gambar unggahan (mis. foto lidah).
@@ -75,7 +75,7 @@ export async function sanitizeImage(input: Buffer, options: Partial<SanitizeOpti
   const sniffed = sniffType(input);
   if (!sniffed) throw new ImageRejectedError('unsupported_type', 'Jenis file tidak didukung.');
 
-  let output: { data: Buffer; info: sharp.OutputInfo };
+  let output: { data: Buffer; info: OutputInfo };
   try {
     const base = sharp(input, { limitInputPixels: opts.maxInputPixels, failOn: 'error', animated: true });
 
