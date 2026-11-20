@@ -43,7 +43,7 @@ export default function PillarBars({ assessment, answers, imbalance, gap }: Pill
               </div>
               <div className="flex items-center gap-3">
                 {weak && (
-                  <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-900">
+                  <span className="rounded-full bg-peach-100 px-2.5 py-0.5 text-xs font-semibold text-peach-900">
                     Perlu perhatian
                   </span>
                 )}
@@ -56,7 +56,7 @@ export default function PillarBars({ assessment, answers, imbalance, gap }: Pill
             <div className="h-2.5 overflow-hidden rounded-full bg-stone-200">
               {score !== null && (
                 <div
-                  className={`h-full rounded-full transition-all duration-1000 ease-out ${weak ? 'bg-amber-500' : 'bg-teal-600'}`}
+                  className={`h-full rounded-full transition-all duration-1000 ease-out ${weak ? 'bg-peach-500' : 'bg-mint-600'}`}
                   style={{ width: `${score}%` }}
                 />
               )}
@@ -69,13 +69,13 @@ export default function PillarBars({ assessment, answers, imbalance, gap }: Pill
                 const low = valid && value <= MICRO_TAG_MAX_SCORE;
                 return (
                   <li key={indicator.id} className="flex items-baseline justify-between gap-4 text-xs">
-                    <span className={low ? 'font-semibold text-amber-900' : 'text-stone-600'}>
+                    <span className={low ? 'font-semibold text-peach-900' : 'text-stone-600'}>
                       <span className="mr-1.5 text-stone-400">{indicator.id}</span>
                       {indicator.title}
                     </span>
                     <span
                       className={`shrink-0 rounded-full px-2 py-0.5 font-semibold tabular-nums ${
-                        low ? 'bg-amber-100 text-amber-900' : valid ? 'bg-stone-100 text-stone-700' : 'bg-stone-100 text-stone-500'
+                        low ? 'bg-peach-100 text-peach-900' : valid ? 'bg-stone-100 text-stone-700' : 'bg-stone-100 text-stone-500'
                       }`}
                     >
                       {valid ? `${value}/5` : 'tidak dijawab'}
@@ -89,7 +89,7 @@ export default function PillarBars({ assessment, answers, imbalance, gap }: Pill
       })}
 
       {imbalance && gap !== null && (
-        <p className="rounded-xl bg-amber-50 p-4 text-sm leading-[1.5] text-amber-900 ring-1 ring-amber-200">
+        <p className="rounded-xl bg-peach-50 p-4 text-sm leading-[1.5] text-peach-900 ring-1 ring-peach-200">
           Ada selisih {Math.round(gap)} poin antara pilar tertinggi dan terendah. Ketidakseimbangan yang cukup besar ini
           layak dibahas bersama konsultan.
         </p>

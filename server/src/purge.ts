@@ -4,11 +4,10 @@ import { withTransaction, type Db } from './db.js';
 /**
  * Penghapusan terjadwal (pengganti fungsi Postgres purge_expired_submissions):
  * 1. kode akses aktif yang lewat masa berlaku -> 'expired';
- * 2. respons DRAF yang melewati expires_at (7 hari) dihapus. Kode akses & foto ikut terhapus (ON DELETE CASCADE).
+ * 2. respons DRAF yang melewati expires_at (7 hari) dihapus. Kode akses, foto (images), dan isi foto terenkripsi
+ *    (image_blobs) ikut terhapus oleh database (ON DELETE CASCADE): foto disimpan di database, bukan di folder.
  * Respons yang sudah 'in_consultation' tidak pernah disentuh.
  * Hanya JUMLAH baris yang dikembalikan/dicatat, tidak pernah data pasien.
- *
- * TODO: saat fitur unggah foto dibuat, objek di penyimpanan untuk `imageStorageKeys` juga harus dihapus.
  */
 export interface PurgeResult {
   expiredCodes: number;

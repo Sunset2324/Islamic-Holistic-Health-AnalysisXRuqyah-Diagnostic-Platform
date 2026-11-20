@@ -10,7 +10,7 @@ const db = createPool(url);
 try {
   const r = await purgeExpired(db);
   console.log(
-    `purge selesai ${new Date().toISOString()}: respons draf dihapus=${r.deletedSubmissions}, kode akses kedaluwarsa=${r.expiredCodes}, foto menunggu dihapus=${r.imageStorageKeys.length}`,
+    `purge selesai ${new Date().toISOString()}: respons draf dihapus=${r.deletedSubmissions}, kode akses kedaluwarsa=${r.expiredCodes}, foto ikut terhapus=${r.imageStorageKeys.length}`,
   );
 } catch (err) {
   // Hanya nama/kode kesalahan; pesan driver bisa memuat potongan query.

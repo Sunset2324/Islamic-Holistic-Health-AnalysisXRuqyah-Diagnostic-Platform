@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { ArrowLeft, ArrowRight, CalendarClock } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CalendarClock, HeartHandshake } from 'lucide-react';
 import { ASSESSMENT_PERIOD_LABEL, COMPLAINT_DETAIL_MAX_LENGTH, COMPLAINT_MAX_LENGTH, COMPLAINT_REQUIRED } from '@/config';
 import type { PatientIntake } from '@/types/intake';
 
@@ -17,8 +17,7 @@ interface FormErrors {
 const MIN_AGE = 10;
 const MAX_AGE = 120;
 
-const inputClass =
-  'w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-900 placeholder:text-stone-400 transition focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20';
+const inputClass = 'input-soft';
 
 export default function PatientIntakeForm({ initial, onSubmit, onBack }: PatientIntakeFormProps) {
   const [name, setName] = useState(initial?.name ?? '');
@@ -56,7 +55,7 @@ export default function PatientIntakeForm({ initial, onSubmit, onBack }: Patient
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 px-6 py-12">
+    <div className="patient-bg px-6 py-12">
       <div className="mx-auto max-w-2xl animate-fade-up">
         <button
           type="button"
@@ -67,18 +66,26 @@ export default function PatientIntakeForm({ initial, onSubmit, onBack }: Patient
           Kembali
         </button>
 
-        <p className="text-xs font-semibold uppercase tracking-wider text-teal-700">Langkah 1 dari 2</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-mint-700">Langkah 1 dari 2</p>
         <h1 className="mt-2 text-3xl font-bold leading-[1.2] tracking-tight text-stone-900">Ceritakan sedikit tentang Anda</h1>
         <p className="mt-3 text-sm leading-[1.5] text-stone-600">
           Informasi ini membantu konsultan memahami kondisi Anda. Semua bagian selain usia boleh dikosongkan.
         </p>
 
-        <div className="mt-6 flex gap-3 rounded-xl bg-teal-50 p-4 ring-1 ring-teal-200">
-          <CalendarClock className="mt-0.5 h-5 w-5 shrink-0 text-teal-700" aria-hidden />
-          <p className="text-sm leading-[1.5] text-teal-900">
+        <div className="mt-6 flex gap-3 rounded-3xl bg-mint-50 p-4 ring-1 ring-mint-200">
+          <CalendarClock className="mt-0.5 h-5 w-5 shrink-0 text-mint-700" aria-hidden />
+          <p className="text-sm leading-[1.5] text-mint-900">
             <strong>Penting:</strong> pertanyaan pada langkah berikutnya menanyakan keadaan Anda selama{' '}
             <strong>{ASSESSMENT_PERIOD_LABEL}</strong>, yaitu 7 hari sebelum hari ini. Pilih jawaban yang paling mendekati
             keadaan Anda secara umum, bukan hanya satu hari yang paling baik atau paling buruk.
+          </p>
+        </div>
+
+        <div className="safe-note mt-4">
+          <HeartHandshake className="mt-0.5 h-5 w-5 shrink-0 text-lavender-700" aria-hidden />
+          <p>
+            <strong>Ini ruang yang aman.</strong> Tidak ada jawaban yang benar atau salah, dan tidak ada yang menilai Anda.
+            Makin jujur ceritanya, makin tepat bantuan yang bisa diberikan. Semua isian disimpan terenkripsi.
           </p>
         </div>
 
@@ -107,7 +114,7 @@ export default function PatientIntakeForm({ initial, onSubmit, onBack }: Patient
                 aria-invalid={Boolean(errors.age)}
                 className={inputClass}
               />
-              {errors.age && <span className="text-xs text-rose-700">{errors.age}</span>}
+              {errors.age && <span className="text-xs text-peach-800">{errors.age}</span>}
             </label>
           </div>
 
@@ -129,7 +136,7 @@ export default function PatientIntakeForm({ initial, onSubmit, onBack }: Patient
               placeholder="Contoh: Dada sering sesak sejak 3 bulan lalu, terutama malam hari..."
               className={`${inputClass} resize-none`}
             />
-            {errors.mainComplaint && <span className="text-xs text-rose-700">{errors.mainComplaint}</span>}
+            {errors.mainComplaint && <span className="text-xs text-peach-800">{errors.mainComplaint}</span>}
           </label>
 
           <fieldset className="space-y-4">
@@ -185,7 +192,7 @@ export default function PatientIntakeForm({ initial, onSubmit, onBack }: Patient
           <div className="flex justify-end pt-2">
             <button
               type="submit"
-              className="group inline-flex items-center gap-2 rounded-xl bg-teal-700 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-teal-900/10 transition hover:bg-teal-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
+              className="group btn-mint"
             >
               Lanjut ke Pertanyaan
               <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />

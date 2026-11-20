@@ -3,7 +3,9 @@ import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import { ZodError } from 'zod';
 import type { AppConfig } from './config.js';
+import { staffBasePath } from './auth.js';
 import { createPool, type Db } from './db.js';
+import { registerStaffRoutes } from './routes/staff.js';
 import { registerSubmissionRoutes } from './routes/submissions.js';
 import { registerStatic } from './static.js';
 
@@ -30,7 +32,13 @@ export async function buildApp({ config, db, logger = true, logStream, staticDir
           level: 'info',
           ...(logStream ? { stream: logStream } : {}),
           // Token/kredensial tidak pernah masuk log. Isi body tidak dicatat sama sekali.
-          redact: { paths: ['headers["x-edit-token"]', 'headers.authorization', 'headers.cookie', 'req.headers["x-edit-token"]', 'req.headers.authorization', 'req.headers.cookie'], censor: '[disembunyikan]' },
+          redact: {
+            paths: [
+              'headers["x-edit-token"]', 'headers.authorization', 'headers.cookie', 'headers["set-cookie"]',
+              'req.headers["x-edit-token"]', 'req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]',
+            ],
+            censor: '[disembunyikan]',
+          },
         }
       : false,
   });
@@ -65,9 +73,10 @@ export async function buildApp({ config, db, logger = true, logStream, staticDir
       return payload;
     });
     registerSubmissionRoutes(api, { db: pool, config });
+    registerStaffRoutes(api, { db: pool, config });
   });
 
-  if (staticDir) await app.register(async (web) => registerStatic(web, staticDir));
+  if (staticDir) await app.register(async (web) => registerStatic(web, staticDir, staffBasePath(config.pepper)));
   app.addHook('onClose', async () => {
     if (!db) await pool.end();
   });

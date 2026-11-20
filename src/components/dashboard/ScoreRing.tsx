@@ -30,7 +30,7 @@ export default function ScoreRing({ score, category }: ScoreRingProps) {
             fill="none"
             strokeWidth="10"
             strokeLinecap="round"
-            className="stroke-teal-600 transition-[stroke-dashoffset] duration-1000 ease-out"
+            className="stroke-mint-600 transition-[stroke-dashoffset] duration-1000 ease-out"
             strokeDasharray={CIRCUMFERENCE}
             strokeDashoffset={offset}
           />
