@@ -3,12 +3,14 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildApp } from '../src/app.js';
+import { staffBasePath } from '../src/auth.js';
 import type { Db } from '../src/db.js';
 import { testConfig } from './helpers.js';
 
 describe('frontend disajikan dari proses API (hosting tanpa nginx)', () => {
   let dir: string;
   let app: Awaited<ReturnType<typeof buildApp>>;
+  const cfg = testConfig();
   const INDEX = '<!doctype html><title>MyHerbalis-index</title>';
 
   beforeAll(async () => {
@@ -21,7 +23,7 @@ describe('frontend disajikan dari proses API (hosting tanpa nginx)', () => {
     writeFileSync(path.join(dir, 'catatan.md'), 'rahasia');
     // Berkas di luar dist yang tidak boleh terjangkau.
     writeFileSync(path.join(path.dirname(dir), 'luar-dist.txt'), 'RAHASIA-LUAR');
-    app = await buildApp({ config: testConfig(), db: {} as Db, logger: false, staticDir: dir });
+    app = await buildApp({ config: cfg, db: {} as Db, logger: false, staticDir: dir });
   });
   afterAll(async () => {
     await app.close();
@@ -80,6 +82,26 @@ describe('frontend disajikan dari proses API (hosting tanpa nginx)', () => {
     expect(api.headers['cache-control']).toBe('no-store');
     const page = await get('/');
     expect(page.headers['content-security-policy']).not.toContain("default-src 'none'");
+  });
+
+  it('halaman staf hanya di alamat rahasia: noindex + no-store; tebakan lain 404', async () => {
+    const real = staffBasePath(cfg.pepper);
+    expect(real).toMatch(/^\/staf-[0-9a-f]{16}$/);
+    // Pepper lain -> alamat lain (tidak bisa ditebak dari repo).
+    expect(staffBasePath(testConfig().pepper)).not.toBe(real);
+    for (const url of [real, `${real}/`]) {
+      const res = await get(url);
+      expect(res.statusCode, url).toBe(200);
+      expect(res.body).toBe(INDEX);
+      expect(res.headers['x-robots-tag']).toContain('noindex');
+      expect(res.headers['cache-control']).toBe('no-store');
+      expect(res.headers['content-security-policy']).toContain("frame-ancestors 'none'");
+    }
+    for (const url of ['/staf-0000000000000000', `${real}x`, `${real}/lain`, '/staf-', '/admin', '/#/konsultan']) {
+      const res = await get(url);
+      if (url.startsWith('/staf-')) expect(res.statusCode, url).toBe(404);
+      else expect(res.headers['x-robots-tag'], url).toBeUndefined();
+    }
   });
 
   it('metode selain GET/HEAD ke halaman ditolak', async () => {

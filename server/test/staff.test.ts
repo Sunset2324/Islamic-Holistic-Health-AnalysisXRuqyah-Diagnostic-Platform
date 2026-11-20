@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { RowDataPacket } from 'mysql2/promise';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildApp } from '../src/app.js';
-import { inviteToken } from '../src/auth.js';
+import { inviteToken, staffBasePath, staffGate } from '../src/auth.js';
 import { createPool, type Db } from '../src/db.js';
 import { ensureSchema } from '../src/schema.js';
 import { sampleBody, testConfig } from './helpers.js';
@@ -35,9 +35,10 @@ run('akun staf: konsultan & admin (MariaDB sungguhan)', () => {
     const value = (Array.isArray(raw) ? raw[0] : raw) as string;
     return value.split(';')[0]!;
   };
+  const gate = () => ({ 'x-staff-gate': staffGate(config.pepper) });
   const req = (method: 'GET' | 'POST' | 'PUT', path: string, cookie?: string, payload?: object, headers: Record<string, string> = {}) =>
-    app.inject({ method, url: path, payload, remoteAddress: nextIp(), headers: { ...(cookie ? { cookie } : {}), ...headers } });
-  const tokenOf = (invitePath: string) => invitePath.split('/undangan/')[1]!;
+    app.inject({ method, url: path, payload, remoteAddress: nextIp(), headers: { ...gate(), ...(cookie ? { cookie } : {}), ...headers } });
+  const tokenOf = (invitePath: string) => invitePath.split('#undangan=')[1]!;
 
   async function newAdmin() {
     const id = randomUUID();
@@ -53,7 +54,7 @@ run('akun staf: konsultan & admin (MariaDB sungguhan)', () => {
     const created = await req('POST', '/api/admin/accounts', adminCookie, { email, displayName: 'Ustadzah Uji' });
     expect(created.statusCode).toBe(201);
     const { id, invitePath } = created.json();
-    expect(invitePath).toMatch(/^\/#\/konsultan\/undangan\//);
+    expect(invitePath.startsWith(`${staffBasePath(config.pepper)}#undangan=`)).toBe(true);
     const set = await req('POST', '/api/auth/set-password', undefined, { token: tokenOf(invitePath), password: 'konsultan-password-123' });
     expect(set.statusCode).toBe(200);
     return { id, email, invitePath, cookie: cookieFrom(set) };
@@ -210,6 +211,22 @@ run('akun staf: konsultan & admin (MariaDB sungguhan)', () => {
     const list = await req('GET', '/api/staff/consultations', admin.cookie);
     expect(list.statusCode).toBe(200);
     expect(list.json().consultations.find((x: { id: string }) => x.id === consultationId).patientName).toBeNull();
+  });
+
+  it('API staf tanpa / dengan header gerbang yang salah dijawab 404 (seperti tidak ada)', async () => {
+    const admin = await newAdmin();
+    const paths: ['GET' | 'POST', string][] = [['POST', '/api/auth/login'], ['GET', '/api/auth/me'], ['GET', '/api/admin/accounts'], ['GET', '/api/staff/consultations']];
+    for (const [method, path] of paths) {
+      for (const g of [undefined, 'salah', staffGate(config.pepper).replace(/.$/, 'x')]) {
+        const res = await app.inject({ method, url: path, payload: method === 'POST' ? { email: admin.email, password: 'admin-password-123' } : undefined, remoteAddress: nextIp(), headers: { cookie: admin.cookie, ...(g ? { 'x-staff-gate': g } : {}) } });
+        expect(res.statusCode, `${path} gate=${g}`).toBe(404);
+        expect(res.json()).toEqual({ error: 'not_found' });
+      }
+    }
+    // Query string tidak melewati gerbang.
+    expect((await app.inject({ method: 'GET', url: '/api/auth/me?x=1', headers: { cookie: admin.cookie } })).statusCode).toBe(404);
+    // API pasien tidak terpengaruh gerbang.
+    expect((await app.inject({ method: 'POST', url: '/api/submissions', payload: sampleBody(), remoteAddress: nextIp() })).statusCode).toBe(201);
   });
 
   it('email ganda ditolak 409', async () => {

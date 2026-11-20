@@ -3,6 +3,7 @@ import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import { ZodError } from 'zod';
 import type { AppConfig } from './config.js';
+import { staffBasePath } from './auth.js';
 import { createPool, type Db } from './db.js';
 import { registerStaffRoutes } from './routes/staff.js';
 import { registerSubmissionRoutes } from './routes/submissions.js';
@@ -75,7 +76,7 @@ export async function buildApp({ config, db, logger = true, logStream, staticDir
     registerStaffRoutes(api, { db: pool, config });
   });
 
-  if (staticDir) await app.register(async (web) => registerStatic(web, staticDir));
+  if (staticDir) await app.register(async (web) => registerStatic(web, staticDir, staffBasePath(config.pepper)));
   app.addHook('onClose', async () => {
     if (!db) await pool.end();
   });

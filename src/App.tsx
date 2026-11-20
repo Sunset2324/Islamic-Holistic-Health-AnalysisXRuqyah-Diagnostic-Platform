@@ -18,8 +18,8 @@ import type { PatientIntake } from '@/types/intake';
 type Step = 'landing' | 'intake' | 'questionnaire' | 'loading' | 'dashboard';
 
 function App() {
-  // Dashboard staf (konsultan & admin): alamat #/konsultan atau #/admin. Belum ada router sungguhan.
-  const isStaff = typeof window !== 'undefined' && /^#\/(konsultan|admin)/.test(window.location.hash);
+  // Dashboard staf (konsultan & admin) hanya di alamat rahasia /staf-<kode> (server menolak tebakan lain dengan 404).
+  const isStaff = typeof window !== 'undefined' && window.location.pathname.startsWith('/staf-');
   const [step, setStep] = useState<Step>('landing');
   const [patient, setPatient] = useState<PatientIntake | null>(null);
   const [answers, setAnswers] = useState<Answers>({});
