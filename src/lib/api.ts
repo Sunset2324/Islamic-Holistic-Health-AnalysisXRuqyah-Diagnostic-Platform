@@ -164,3 +164,89 @@ export async function issueAccessCode(id: string, token: string): Promise<Issued
   const response = await request('POST', `/submissions/${encodeURIComponent(id)}/access-code`, { token });
   return readJson<IssuedCode>(response);
 }
+
+/* ------------------------------- Foto lidah (opsional) ------------------------------- */
+
+export interface UploadedImage {
+  id: string;
+  bytes: number;
+  createdAt: string;
+}
+
+export type ImageErrorKind = ApiErrorKind | 'image_rejected' | 'image_limit' | 'too_large';
+
+export const IMAGE_ERROR_MESSAGES: Record<ImageErrorKind, string> = {
+  ...ERROR_MESSAGES,
+  image_rejected: 'File ini tidak bisa diterima. Pastikan yang dipilih adalah foto (JPG, PNG, atau WebP), bukan dokumen atau file lain.',
+  image_limit: 'Sudah ada 3 foto. Hapus salah satu bila ingin menggantinya.',
+  too_large: 'Ukuran foto terlalu besar (maksimal 8 MB).',
+};
+
+export class ImageApiError extends Error {
+  constructor(public readonly kind: ImageErrorKind) {
+    super(IMAGE_ERROR_MESSAGES[kind]);
+    this.name = 'ImageApiError';
+  }
+}
+
+const MAX_SIDE = 2048;
+
+/**
+ * Memperkecil foto di perangkat sebelum dikirim (hemat kuota). Ini hanya kenyamanan: keamanan sepenuhnya
+ * di server, yang memeriksa isi file dan menggambar ulang setiap foto.
+ */
+async function shrink(file: Blob): Promise<Blob> {
+  try {
+    const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext('2d')?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const out = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+    return out && out.size > 0 ? out : file;
+  } catch {
+    return file; // browser tidak bisa membaca -> biarkan server yang menilai
+  }
+}
+
+async function imageRequest(method: string, path: string, token: string, body?: Blob): Promise<Response> {
+  const headers: Record<string, string> = { 'x-edit-token': token };
+  if (body) headers['Content-Type'] = 'application/octet-stream';
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, { method, headers, body, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer' });
+  } catch {
+    throw new ImageApiError('network');
+  }
+  if (response.ok) return response;
+  if (response.status === 422) throw new ImageApiError('image_rejected');
+  if (response.status === 409) throw new ImageApiError('image_limit');
+  if (response.status === 413) throw new ImageApiError('too_large');
+  throw new ImageApiError(kindFromStatus(response.status));
+}
+
+const imagesPath = (id: string) => `/submissions/${encodeURIComponent(id)}/images`;
+
+export async function listImages(id: string, token: string): Promise<{ images: UploadedImage[]; max: number }> {
+  const response = await imageRequest('GET', imagesPath(id), token);
+  return readJson(response);
+}
+
+export async function uploadImage(id: string, token: string, file: Blob): Promise<UploadedImage> {
+  const response = await imageRequest('POST', imagesPath(id), token, await shrink(file));
+  return readJson(response);
+}
+
+/** Foto diambil sebagai blob (token di header, bukan di URL) lalu ditampilkan lewat object URL lokal. */
+export async function fetchImage(id: string, token: string, imageId: string): Promise<Blob> {
+  const response = await imageRequest('GET', `${imagesPath(id)}/${encodeURIComponent(imageId)}`, token);
+  const blob = await response.blob();
+  if (blob.type !== 'image/webp') throw new ImageApiError('server');
+  return blob;
+}
+
+export async function deleteImage(id: string, token: string, imageId: string): Promise<void> {
+  await imageRequest('DELETE', `${imagesPath(id)}/${encodeURIComponent(imageId)}`, token);
+}

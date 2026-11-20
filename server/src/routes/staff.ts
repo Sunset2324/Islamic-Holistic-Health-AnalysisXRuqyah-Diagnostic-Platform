@@ -23,6 +23,7 @@ import {
 import type { AppConfig } from '../config.js';
 import { decrypt, encrypt, hmacHex, normalizeCode, safeEqual, type KeyRing } from '../crypto.js';
 import { withTransaction, type Db } from '../db.js';
+import { sendImage, toImageList, type ImageBlobRow, type ImageListRow } from '../images.js';
 import { answersSchema, idParamSchema, intakeSchema, tagSelectionsSchema } from '../validation.js';
 
 interface Deps {
@@ -272,6 +273,8 @@ export function registerStaffRoutes(app: FastifyInstance, { db, config }: Deps):
           seal(keyRing, ctx(id, 'snapshot_tags_enc'), tags),
         ],
       );
+      // Foto lidah pindah milik ke konsultasi (tidak lagi bisa diubah/dihapus pasien, tidak ikut purge draf).
+      await conn.execute('UPDATE images SET submission_id = NULL, consultation_id = ? WHERE submission_id = ?', [id, sub.submission_id]);
       await conn.execute("DELETE FROM code_attempts WHERE account_id = ? AND kind = 'access'", [staff.id]);
       await audit(conn, staff, 'accept_code', 'consultations', id);
       return id;
@@ -338,6 +341,7 @@ export function registerStaffRoutes(app: FastifyInstance, { db, config }: Deps):
     if (!row || !canRead(staff, row)) return reply.code(404).send({ error: 'not_found' });
     await audit(db, staff, 'view', 'consultations', id);
     const kv = row.key_version;
+    const [images] = await db.execute<ImageListRow[]>('SELECT id, bytes, created_at FROM images WHERE consultation_id = ? ORDER BY created_at', [id]);
     return {
       id: row.id,
       status: row.status,
@@ -360,7 +364,25 @@ export function registerStaffRoutes(app: FastifyInstance, { db, config }: Deps):
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       finalizedAt: row.finalized_at,
+      images: toImageList(images),
     };
+  });
+
+  /** Foto lidah pasien. Hak baca sama dengan konsultasinya; setiap pembukaan foto tercatat di audit. */
+  app.get('/api/staff/consultations/:id/images/:imageId', { preHandler: anyStaff }, async (req, reply) => {
+    const staff = req.staff as StaffAccount;
+    const { id, imageId } = idParamSchema.extend({ imageId: z.uuid() }).parse(req.params);
+    const row = await loadConsultation(id);
+    if (!row || !canRead(staff, row)) return reply.code(404).send({ error: 'not_found' });
+    const [blobs] = await db.execute<ImageBlobRow[]>(
+      `SELECT b.storage_key, b.key_version, b.data_enc
+         FROM images i JOIN image_blobs b ON b.storage_key = i.storage_key
+        WHERE i.id = ? AND i.consultation_id = ?`,
+      [imageId, id],
+    );
+    if (!blobs[0]) return reply.code(404).send({ error: 'not_found' });
+    await audit(db, staff, 'view_image', 'images', imageId, { consultationId: id });
+    return sendImage(reply, keyRing, blobs[0]);
   });
 
   /** Simpan laporan (draf). Hanya konsultan pemilik, hanya selama draf. Admin tidak bisa mengubah. */

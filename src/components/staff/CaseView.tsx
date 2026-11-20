@@ -9,6 +9,7 @@ import { INDICATORS } from '@/data/indicators';
 import { computeAssessment, concerningTags, sanitizeTagSelections } from '@/lib/Hhs';
 import { assessRuqyah } from '@/lib/ruqyah';
 import { staffApi, staffErrorMessage, type ConsultationDetail, type Report, type StaffAccount } from '@/lib/staffApi';
+import PatientPhotos from './PatientPhotos';
 import { Field, GlassCard, Notice, Spinner, StatusChip } from './ui';
 import { formatDateTime } from './format';
 
@@ -156,6 +157,7 @@ export default function CaseView({ id, account, onBack, onAuthError }: Props) {
               <Row label="Riwayat medis" value={intake.medicalHistory} />
             </dl>
           </GlassCard>
+          <PatientPhotos consultationId={id} images={data.images ?? []} onAuthError={onAuthError} />
           <GlassCard title="Hasil HHS (hitungan sistem)">
             {assessment.complete && assessment.hhs100Display !== null && assessment.category ? (
               <ScoreRing score={assessment.hhs100Display} category={assessment.category} />

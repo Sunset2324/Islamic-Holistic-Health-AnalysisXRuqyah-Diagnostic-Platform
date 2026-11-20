@@ -9,6 +9,7 @@ const ACTION_LABEL: Record<string, string> = {
   set_password: 'Membuat/mengganti kata sandi',
   accept_code: 'Menerima kode pasien',
   view: 'Membuka laporan',
+  view_image: 'Membuka foto lidah',
   list: 'Melihat daftar konsultasi',
   update: 'Menyimpan draf laporan',
   finalize: 'Memfinalkan laporan',
