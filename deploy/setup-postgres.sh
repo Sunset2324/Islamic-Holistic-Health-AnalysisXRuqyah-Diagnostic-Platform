@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Menyiapkan database MyHerbalis di PostgreSQL yang SUDAH terpasang: peran berhak-minimal, kata sandi acak,
+# Menyiapkan database My Herbalis di PostgreSQL yang SUDAH terpasang: peran berhak-minimal, kata sandi acak,
 # penerapan skema sebagai pemilik NON-superuser, dan file kata sandi (pgpass).
 # Dijalankan sebagai root di server. Aman dijalankan ulang (peran/DB yang ada dilewati; kata sandi TIDAK diganti).
 #

@@ -94,22 +94,3 @@
     @apply flex gap-3 rounded-3xl bg-lavender-50 p-4 text-sm leading-[1.5] text-lavender-950 ring-1 ring-lavender-200;
   }
 }
-
-/* Laporan pasien (pratinjau & cetak). */
-.report-heat { background: #fb9163; }
-.report-cold { background: #aa95f0; }
-.print-only { display: none; }
-
-/*
- * Cetak laporan konsultan: seluruh aplikasi (#root) disembunyikan dengan display:none sehingga tidak menyisakan
- * halaman kosong; yang tercetak hanya salinan laporan pasien (portal .print-only di <body>).
- */
-@page { size: A4; margin: 16mm 14mm; }
-@media print {
-  html, body { background: #fff !important; }
-  #root { display: none !important; }
-  .print-only { display: block; }
-  .print-only * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .report-block, .report tr { break-inside: avoid; }
-  .report h2 { break-after: avoid; }
-}

@@ -42,7 +42,7 @@ export default function LandingPage({ onStart, banner }: LandingPageProps) {
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <div className="flex items-center gap-2">
           <img src="/favicon.svg" alt="" className="h-10 w-10 rounded-2xl shadow-[0_6px_16px_-6px_rgba(34,136,106,0.7)]" />
-          <span className="text-base font-bold tracking-tight text-stone-900">MyHerbalis</span>
+          <span className="text-base font-bold tracking-tight text-stone-900">My Herbalis</span>
         </div>
         <span className="hidden items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs font-medium text-lavender-800 ring-1 ring-lavender-200 sm:flex">
           <ShieldCheck className="h-4 w-4" />

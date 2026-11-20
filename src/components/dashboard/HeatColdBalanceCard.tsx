@@ -55,7 +55,7 @@ export default function HeatColdBalanceCard({ balance, audience }: Props) {
 
       <p className="text-sm leading-[1.5] text-stone-700">{audience === 'patient' ? BALANCE_PATIENT_TEXT[tilt] : BALANCE_STAFF_TEXT[tilt]}</p>
       <p className="text-xs leading-[1.5] text-stone-500">
-        Idealnya 50:50. Di neraca ini keempat pilar dihitung sama rata. Ini alat refleksi MyHerbalis, bukan diagnosis.
+        Idealnya 50:50. Di neraca ini keempat pilar dihitung sama rata. Ini alat refleksi My Herbalis, bukan diagnosis.
       </p>
     </div>
   );
