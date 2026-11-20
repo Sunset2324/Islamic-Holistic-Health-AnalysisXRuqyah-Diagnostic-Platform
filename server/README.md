@@ -54,23 +54,9 @@ Variabel environment (isi sendiri di hPanel, jangan dikirim ke siapa pun): `DATA
 ### Penghapusan draf kedaluwarsa (cron)
 `server/purge.mjs` menghapus respons draf yang melewati 7 hari (kode aksesnya ikut terhapus) dan menandai kode akses
 lewat masa berlaku sebagai `expired`. Respons yang sedang dikonsultasikan tidak disentuh. Hanya jumlah baris yang dicatat.
-Cron Hostinger (tiap jam):
+Cron Hostinger (tiap jam, menit ke-17):
 ```
-/opt/alt/alt-nodejs22/root/bin/node /home/<user>/domains/<domain>/hbuilds/current/nodejs/server/purge.mjs
+/opt/alt/alt-nodejs22/root/bin/node --env-file=/home/<user>/domains/<domain>/hbuilds/config/.env /home/<user>/domains/<domain>/hbuilds/current/nodejs/server/purge.mjs
 ```
-Cron tidak mewarisi variabel aplikasi; skrip memuat `.env` di akar aplikasi bila `DATABASE_URL` belum ada.
-
-## Akun staf (konsultan & admin)
-- Dashboard: `https://<domain>/#/konsultan` (gaya kaca/glossy). Tidak ada pendaftaran publik.
-- **Admin pertama** dibuat sekali dari server (mis. lewat cron sekali jalan di Hostinger):
-  ```
-  /opt/alt/alt-nodejs22/root/bin/node --env-file=/home/<user>/domains/<domain>/hbuilds/config/.env \
-    /home/<user>/domains/<domain>/hbuilds/current/nodejs/server/admin.mjs create-admin <email> "<Nama>"
-  ```
-  Keluarannya alamat undangan relatif (berlaku 1 jam, sekali pakai); buka dengan `https://<domain>` di depannya.
-- Admin membuat akun konsultan dari dashboard; tautan undangan berlaku 72 jam dan sekali pakai (juga untuk reset sandi).
-- Password: Argon2id (19 MiB, t=2, p=1), minimal 12 karakter; 5x gagal masuk -> terkunci 15 menit.
-- Sesi: cookie `__Host-mh_session` (HttpOnly, Secure, SameSite=Strict, 8 jam) bertanda tangan `HMAC_PEPPER`.
-  Akun dinonaktifkan atau sandi diganti -> semua sesi lama langsung tidak berlaku. Tidak ada variabel baru.
-- Admin membaca laporan dalam mode baca saja; setiap pembukaan/daftar tercatat di `audit_log` (tanpa isi data pasien).
-- Skema: kolom `accounts.password_hash` dan `accounts.display_name` ditambahkan otomatis saat start (idempoten).
+Cron tidak mewarisi variabel aplikasi. Hostinger menyimpan variabel dari hPanel di `hbuilds/config/.env` (izin 600),
+jadi berkas itu dimuat dengan `--env-file`. `hbuilds/current` selalu menunjuk ke versi terbaru, aman saat redeploy.
