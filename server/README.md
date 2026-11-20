@@ -54,8 +54,9 @@ Variabel environment (isi sendiri di hPanel, jangan dikirim ke siapa pun): `DATA
 ### Penghapusan draf kedaluwarsa (cron)
 `server/purge.mjs` menghapus respons draf yang melewati 7 hari (kode aksesnya ikut terhapus) dan menandai kode akses
 lewat masa berlaku sebagai `expired`. Respons yang sedang dikonsultasikan tidak disentuh. Hanya jumlah baris yang dicatat.
-Cron Hostinger (tiap jam):
+Cron Hostinger (tiap jam, menit ke-17):
 ```
-/opt/alt/alt-nodejs22/root/bin/node /home/<user>/domains/<domain>/hbuilds/current/nodejs/server/purge.mjs
+/opt/alt/alt-nodejs22/root/bin/node --env-file=/home/<user>/domains/<domain>/hbuilds/config/.env /home/<user>/domains/<domain>/hbuilds/current/nodejs/server/purge.mjs
 ```
-Cron tidak mewarisi variabel aplikasi; skrip memuat `.env` di akar aplikasi bila `DATABASE_URL` belum ada.
+Cron tidak mewarisi variabel aplikasi. Hostinger menyimpan variabel dari hPanel di `hbuilds/config/.env` (izin 600),
+jadi berkas itu dimuat dengan `--env-file`. `hbuilds/current` selalu menunjuk ke versi terbaru, aman saat redeploy.
