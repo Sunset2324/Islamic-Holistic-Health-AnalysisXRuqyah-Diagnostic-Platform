@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, CheckCircle2, Eye, Printer, Save, ShieldAlert } from 'lucide-react';
+import HeatColdBalanceCard from '@/components/dashboard/HeatColdBalanceCard';
 import PillarBars from '@/components/dashboard/PillarBars';
 import RuqyahAlertCard from '@/components/dashboard/RuqyahAlertCard';
 import ScoreRing from '@/components/dashboard/ScoreRing';
 import { EMERGENCY_NUMBER } from '@/config';
 import { RUQYAH_CONDITIONS, type RuqyahConditionId } from '@/data/conditions';
 import { INDICATORS } from '@/data/indicators';
+import { computeHeatColdBalance } from '@/lib/balance';
 import { computeAssessment, concerningTags, sanitizeTagSelections } from '@/lib/Hhs';
 import { assessRuqyah } from '@/lib/ruqyah';
 import { staffApi, staffErrorMessage, type ConsultationDetail, type Report, type StaffAccount } from '@/lib/staffApi';
@@ -46,6 +48,7 @@ export default function CaseView({ id, account, onBack, onAuthError }: Props) {
   const answers = useMemo(() => data?.answers ?? {}, [data]);
   const assessment = useMemo(() => computeAssessment(answers), [answers]);
   const ruqyah = useMemo(() => assessRuqyah(assessment), [assessment]);
+  const balance = useMemo(() => computeHeatColdBalance(assessment), [assessment]);
   const tags = useMemo(() => sanitizeTagSelections(answers, data?.tagSelections ?? {}), [answers, data]);
   const concerning = useMemo(() => concerningTags(answers, tags), [answers, tags]);
 
@@ -167,6 +170,11 @@ export default function CaseView({ id, account, onBack, onAuthError }: Props) {
             <div className="mt-6">
               <PillarBars assessment={assessment} answers={answers} imbalance={ruqyah.imbalance} gap={ruqyah.gap} />
             </div>
+            {balance && (
+              <div className="mt-6 border-t border-stone-200 pt-6">
+                <HeatColdBalanceCard balance={balance} audience="staff" />
+              </div>
+            )}
           </GlassCard>
           <GlassCard title="Micro-Tag yang dipilih pasien">
             <ul className="space-y-1.5 text-sm">
