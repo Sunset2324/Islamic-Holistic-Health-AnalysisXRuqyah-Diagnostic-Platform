@@ -1,5 +1,6 @@
 import { ClipboardList, RotateCcw } from 'lucide-react';
 import ConditionDetail from '@/components/dashboard/ConditionDetail';
+import HeatColdBalanceCard from '@/components/dashboard/HeatColdBalanceCard';
 import ConsultationAdviceCard from '@/components/dashboard/ConsultationAdviceCard';
 import PillarBars from '@/components/dashboard/PillarBars';
 import RuqyahAlertCard from '@/components/dashboard/RuqyahAlertCard';
@@ -7,6 +8,7 @@ import ScoreRing from '@/components/dashboard/ScoreRing';
 import { ALGORITHM_VERSION, ASSESSMENT_PERIOD_LABEL, QUESTIONNAIRE_VERSION, SHOW_RUQYAH_TO_PATIENT } from '@/config';
 import { RUQYAH_CONDITIONS } from '@/data/conditions';
 import { INDICATORS, INDICATOR_BY_ID } from '@/data/indicators';
+import { computeHeatColdBalance } from '@/lib/balance';
 import { concerningTags, lowIndicators, sanitizeTagSelections, type Answers, type Assessment, type TagSelections } from '@/lib/Hhs';
 import type { RuqyahAssessment } from '@/lib/ruqyah';
 import type { PatientIntake } from '@/types/intake';
@@ -45,6 +47,7 @@ export default function ResultDashboard({
   const primary = ruqyah.suggestions[0];
   const showDetail = SHOW_RUQYAH_TO_PATIENT && primary && primary.strength !== 'partial';
   const firstUnanswered = assessment.unanswered[0];
+  const balance = computeHeatColdBalance(assessment);
 
   return (
     <div className="patient-bg text-stone-800">
@@ -127,6 +130,12 @@ export default function ResultDashboard({
             <PillarBars assessment={assessment} answers={answers} imbalance={ruqyah.imbalance} gap={ruqyah.gap} />
           </div>
         </section>
+
+        {balance && (
+          <section className="animate-fade-up soft-card p-8" style={{ animationDelay: '180ms' }}>
+            <HeatColdBalanceCard balance={balance} audience="patient" />
+          </section>
+        )}
 
         {low.length > 0 && (
           <section className="animate-fade-up soft-card p-8" style={{ animationDelay: '200ms' }}>
