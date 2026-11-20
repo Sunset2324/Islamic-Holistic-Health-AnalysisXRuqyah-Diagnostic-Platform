@@ -1,4 +1,4 @@
-import { ClipboardList, Leaf, RotateCcw } from 'lucide-react';
+import { ClipboardList, RotateCcw } from 'lucide-react';
 import ConditionDetail from '@/components/dashboard/ConditionDetail';
 import ConsultationAdviceCard from '@/components/dashboard/ConsultationAdviceCard';
 import PillarBars from '@/components/dashboard/PillarBars';
@@ -51,9 +51,7 @@ export default function ResultDashboard({
       <header className="sticky top-0 z-10 border-b border-white/70 bg-white/70 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-mint-700 text-white">
-              <Leaf className="h-4 w-4" />
-            </span>
+            <img src="/favicon.svg" alt="" className="h-8 w-8 rounded-xl" />
             <span className="text-sm font-bold tracking-tight text-stone-900">MyHerbalis</span>
           </div>
           <button

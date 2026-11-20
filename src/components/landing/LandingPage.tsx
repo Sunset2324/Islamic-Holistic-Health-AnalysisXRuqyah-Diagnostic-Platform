@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Activity, ArrowRight, HeartHandshake, Leaf, Lock, MessageCircleHeart, ShieldCheck, Sparkles, Stethoscope, SunMedium } from 'lucide-react';
+import { Activity, ArrowRight, HeartHandshake, Lock, MessageCircleHeart, ShieldCheck, Sparkles, Stethoscope, SunMedium } from 'lucide-react';
+import HeroScene from './HeroScene';
 
 interface LandingPageProps {
   onStart: () => void;
@@ -40,9 +41,7 @@ export default function LandingPage({ onStart, banner }: LandingPageProps) {
     <div className="patient-bg">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <div className="flex items-center gap-2">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-mint-500 text-white shadow-[0_6px_16px_-6px_rgba(34,136,106,0.7)]">
-            <Leaf className="h-5 w-5" />
-          </span>
+          <img src="/favicon.svg" alt="" className="h-10 w-10 rounded-2xl shadow-[0_6px_16px_-6px_rgba(34,136,106,0.7)]" />
           <span className="text-base font-bold tracking-tight text-stone-900">MyHerbalis</span>
         </div>
         <span className="hidden items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs font-medium text-lavender-800 ring-1 ring-lavender-200 sm:flex">
@@ -80,17 +79,11 @@ export default function LandingPage({ onStart, banner }: LandingPageProps) {
             </p>
           </div>
 
-          <div className="animate-fade-up relative mx-auto w-full max-w-md lg:max-w-none" style={{ animationDelay: '120ms' }}>
-            <div
-              role="img"
-              aria-label="Logo MyHerbalis: daun dan bulan sabit"
-              className="flex aspect-[4/3] w-full items-center justify-center rounded-[2.5rem] bg-gradient-to-br from-mint-200 via-lavender-100 to-peach-200 shadow-[0_30px_60px_-30px_rgba(100,67,185,0.45)] ring-8 ring-white/70"
-            >
-              <span className="flex h-44 w-44 items-center justify-center rounded-full bg-white/70 shadow-inner">
-                <img src="/favicon.svg" alt="" className="h-28 w-28 drop-shadow-lg" />
-              </span>
+          <div className="animate-fade-up relative mx-auto mb-16 w-full max-w-md sm:mb-0 lg:max-w-none" style={{ animationDelay: '120ms' }}>
+            <div className="overflow-hidden rounded-[2.5rem] shadow-[0_30px_60px_-30px_rgba(100,67,185,0.45)] ring-8 ring-white/70">
+              <HeroScene className="block aspect-[4/3] h-auto w-full" />
             </div>
-            <div className="soft-card absolute -bottom-6 left-4 right-4 p-4 sm:left-[-1.5rem] sm:right-auto sm:w-80">
+            <div className="soft-card absolute -bottom-20 left-4 right-4 p-4 sm:-bottom-6 sm:left-[-1.5rem] sm:right-auto sm:w-80">
               <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-lavender-700">
                 <HeartHandshake className="h-3.5 w-3.5" /> Contoh hasil
               </p>
