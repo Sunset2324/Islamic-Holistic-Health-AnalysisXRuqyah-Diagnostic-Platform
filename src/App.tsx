@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
-import ConsultantPrototype from '@/components/consultant/ConsultantPrototype';
 import EmergencyFooter from '@/components/common/Emergencyfooters';
 import LandingPage from '@/components/landing/LandingPage';
 import SavedSubmissionBanner from '@/components/landing/SavedSubmissionBanner';
 import SubmissionPanel from '@/components/dashboard/SubmissionPanel';
+import StaffApp from '@/components/staff/StaffApp';
 import PatientIntakeForm from '@/components/intake/PatientIntakeForm';
 import AnalysisLoader from '@/components/questionnaire/AnalysisLoader';
 import QuestionnaireScreen from '@/components/questionnaire/QuestionnaireScreen';
@@ -18,8 +18,8 @@ import type { PatientIntake } from '@/types/intake';
 type Step = 'landing' | 'intake' | 'questionnaire' | 'loading' | 'dashboard';
 
 function App() {
-  // Prototipe konsultan: buka dengan alamat #/konsultan. Belum ada router sungguhan.
-  const isConsultantPrototype = typeof window !== 'undefined' && window.location.hash.startsWith('#/konsultan');
+  // Dashboard staf (konsultan & admin): alamat #/konsultan atau #/admin. Belum ada router sungguhan.
+  const isStaff = typeof window !== 'undefined' && /^#\/(konsultan|admin)/.test(window.location.hash);
   const [step, setStep] = useState<Step>('landing');
   const [patient, setPatient] = useState<PatientIntake | null>(null);
   const [answers, setAnswers] = useState<Answers>({});
@@ -82,7 +82,7 @@ function App() {
     setStep('landing');
   }
 
-  if (isConsultantPrototype) return <ConsultantPrototype />;
+  if (isStaff) return <StaffApp />;
 
   let screen;
   if (step === 'intake') {
