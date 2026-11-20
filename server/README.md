@@ -50,3 +50,12 @@ Variabel environment (isi sendiri di hPanel, jangan dikirim ke siapa pun): `DATA
   `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Simpan cadangannya di tempat aman:
   kehilangan `DATA_KEY_V1` = data terenkripsi tidak bisa dibaca lagi.
 - `DATA_KEY_CURRENT=1`, `TRUST_PROXY=true` (hanya proxy terdekat yang dipercaya). `PORT` biasanya diisi hosting.
+
+### Penghapusan draf kedaluwarsa (cron)
+`server/purge.mjs` menghapus respons draf yang melewati 7 hari (kode aksesnya ikut terhapus) dan menandai kode akses
+lewat masa berlaku sebagai `expired`. Respons yang sedang dikonsultasikan tidak disentuh. Hanya jumlah baris yang dicatat.
+Cron Hostinger (tiap jam):
+```
+/opt/alt/alt-nodejs22/root/bin/node /home/<user>/domains/<domain>/hbuilds/current/nodejs/server/purge.mjs
+```
+Cron tidak mewarisi variabel aplikasi; skrip memuat `.env` di akar aplikasi bila `DATABASE_URL` belum ada.
