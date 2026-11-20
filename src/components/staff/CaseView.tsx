@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ArrowLeft, CheckCircle2, Eye, Printer, Save, ShieldAlert } from 'lucide-react';
 import HeatColdBalanceCard from '@/components/dashboard/HeatColdBalanceCard';
 import PillarBars from '@/components/dashboard/PillarBars';
 import RuqyahAlertCard from '@/components/dashboard/RuqyahAlertCard';
 import ScoreRing from '@/components/dashboard/ScoreRing';
-import { EMERGENCY_NUMBER } from '@/config';
 import { RUQYAH_CONDITIONS, type RuqyahConditionId } from '@/data/conditions';
 import { INDICATORS } from '@/data/indicators';
 import { computeHeatColdBalance } from '@/lib/balance';
@@ -12,6 +12,7 @@ import { computeAssessment, concerningTags, sanitizeTagSelections } from '@/lib/
 import { assessRuqyah } from '@/lib/ruqyah';
 import { staffApi, staffErrorMessage, type ConsultationDetail, type Report, type StaffAccount } from '@/lib/staffApi';
 import PatientPhotos from './PatientPhotos';
+import PatientReport from './PatientReport';
 import { Field, GlassCard, Notice, Spinner, StatusChip } from './ui';
 import { formatDateTime } from './format';
 
@@ -22,7 +23,6 @@ interface Props {
   onAuthError: (err: unknown) => void;
 }
 
-const dateFormat = new Intl.DateTimeFormat('id-ID', { dateStyle: 'long' });
 
 export default function CaseView({ id, account, onBack, onAuthError }: Props) {
   const [data, setData] = useState<ConsultationDetail | null>(null);
@@ -113,7 +113,22 @@ export default function CaseView({ id, account, onBack, onAuthError }: Props) {
     }
   }
 
-  const condition = report.ruqyahFinalCondition as RuqyahConditionId | null;
+  const reportProps = {
+    intake,
+    answers,
+    assessment,
+    balance,
+    report,
+    consultantName: data.consultant.displayName ?? data.consultant.email,
+    date: data.finalizedAt ? new Date(data.finalizedAt) : new Date(),
+  };
+  function printReport() {
+    // Nama file PDF bawaan browser diambil dari judul halaman.
+    const previous = document.title;
+    document.title = `Laporan MyHerbalis - ${intake.name || 'Pasien'}`;
+    window.addEventListener('afterprint', () => (document.title = previous), { once: true });
+    window.print();
+  }
 
   return (
     <div className="space-y-6">
@@ -272,42 +287,25 @@ export default function CaseView({ id, account, onBack, onAuthError }: Props) {
             title={data.status === 'final' ? 'Laporan untuk pasien' : 'Pratinjau laporan untuk pasien'}
             actions={
               data.status === 'final' && (
-                <button type="button" onClick={() => window.print()} className="btn-glass">
+                <button type="button" onClick={printReport} className="btn-glass">
                   <Printer className="h-4 w-4" /> Cetak / PDF
                 </button>
               )
             }
           >
-            <div id="patient-report" className="space-y-4 rounded-xl border border-stone-200 bg-white p-5 text-sm leading-[1.5]">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-teal-700">MyHerbalis · Laporan konsultasi</p>
-                <p className="mt-1 text-base font-bold text-stone-900">{intake.name || 'Pasien'}</p>
-                <p className="text-xs text-stone-500">{dateFormat.format(data.finalizedAt ? new Date(data.finalizedAt) : new Date())}</p>
-              </div>
-              <div>
-                <p className="font-semibold text-stone-900">Saran dari konsultan</p>
-                <p className="mt-1 whitespace-pre-wrap text-stone-700">{report.advice.trim() || <span className="text-stone-400">(belum diisi)</span>}</p>
-              </div>
-              {report.shareRuqyah && condition && (
-                <div>
-                  <p className="font-semibold text-stone-900">Penilaian ruqyah</p>
-                  <p className="mt-1 text-stone-700">{RUQYAH_CONDITIONS[condition].name}</p>
-                  <p className="whitespace-pre-wrap text-stone-700">{report.ruqyahNotes.trim()}</p>
-                </div>
-              )}
-              {report.shareClinicalNotes && report.clinicalNotes.trim() && (
-                <div>
-                  <p className="font-semibold text-stone-900">Catatan klinis</p>
-                  <p className="mt-1 whitespace-pre-wrap text-stone-700">{report.clinicalNotes.trim()}</p>
-                </div>
-              )}
-              <p className="border-t border-stone-200 pt-3 text-xs text-stone-500">
-                Laporan ini bukan diagnosis medis. Dalam keadaan darurat hubungi {EMERGENCY_NUMBER} atau datang ke fasilitas kesehatan terdekat.
-              </p>
+            <div className="rounded-xl border border-stone-200 bg-white p-6">
+              <PatientReport {...reportProps} />
             </div>
           </GlassCard>
         </div>
       </div>
+      {data.status === 'final' &&
+        createPortal(
+          <div className="print-only">
+            <PatientReport {...reportProps} />
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

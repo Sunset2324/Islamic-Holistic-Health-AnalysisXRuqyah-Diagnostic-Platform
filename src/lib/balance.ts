@@ -49,3 +49,19 @@ export function computeHeatColdBalance(assessment: Assessment): HeatColdBalance 
   const toScore = (pointSum: number) => (pointSum * 25) / INDICATORS_PER_PILLAR / 2;
   return { heat: toScore(heatPoints), cold: toScore(coldPoints), heatPercent, coldPercent, tilt, strong, label };
 }
+
+/** Penjelasan untuk pasien (hasil sementara & laporan cetak). */
+export const BALANCE_PATIENT_TEXT = {
+  seimbang: 'Perhatian Anda pada tubuh dan jiwa sudah seimbang. Pertahankan keseimbangan ini, sambil terus menaikkan keduanya bersama-sama.',
+  panas:
+    'Perhatian Anda lebih banyak tercurah pada tubuh (pola hidup dan pola makan), sementara pikiran dan sisi spiritual sedang tertinggal. Coba sisihkan waktu untuk menenangkan hati: istirahat batin, dzikir, dan bercerita kepada orang yang Anda percaya.',
+  dingin:
+    'Pikiran dan sisi spiritual Anda relatif terjaga, sementara tubuh (pola hidup dan pola makan) sedang tertinggal. Coba mulai dari langkah kecil: tidur lebih teratur, minum cukup, bergerak, dan makan lebih seimbang.',
+} as const;
+
+/** Catatan singkat untuk konsultan. */
+export const BALANCE_STAFF_TEXT = {
+  seimbang: 'Sisi tubuh (PL+PM) dan sisi jiwa (PP+FX) setara.',
+  panas: 'Sisi jiwa (PP+FX) tertinggal dari sisi tubuh (PL+PM). Gali beban pikiran, emosi, spiritual, dan dukungan sosial.',
+  dingin: 'Sisi tubuh (PL+PM) tertinggal dari sisi jiwa (PP+FX). Gali tidur, aktivitas, ritme harian, dan pola makan.',
+} as const;
