@@ -28,7 +28,7 @@ const ogHtml = `<!doctype html><html><body style="margin:0">
   </svg>
   <div style="position:absolute;left:80px;top:64px;display:flex;align-items:center;gap:22px">
     <div style="width:88px;height:88px;border-radius:20px;overflow:hidden;box-shadow:0 12px 30px -12px rgba(34,136,106,.7)">${logoInline}</div>
-    <div style="font-size:44px;font-weight:700;letter-spacing:-0.5px">MyHerbalis</div>
+    <div style="font-size:44px;font-weight:700;letter-spacing:-0.5px">My Herbalis</div>
   </div>
   <div style="position:absolute;left:80px;top:205px;width:720px;font-size:70px;line-height:1.12;font-weight:700;letter-spacing:-1.5px;color:#1c1917">
     Kenali tubuh, sehatkan pikiran, <span style="color:#1d6d56">kuatkan iman.</span>

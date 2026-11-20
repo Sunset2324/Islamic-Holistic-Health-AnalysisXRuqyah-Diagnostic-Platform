@@ -2,7 +2,7 @@ import type { PillarId } from '@/data/pillars';
 import { INDICATORS_PER_PILLAR, type Assessment } from '@/lib/Hhs';
 
 /**
- * Neraca Panas–Dingin (model refleksi MyHerbalis, bukan rumus TCM/Thibbunnabawi klasik dan bukan diagnosis).
+ * Neraca Panas–Dingin (model refleksi My Herbalis, bukan rumus TCM/Thibbunnabawi klasik dan bukan diagnosis).
  *
  * - Panas = sisi tubuh: Pola Hidup (PL) + Pola Makan (PM).
  * - Dingin = sisi jiwa: Pola Pikir (PP) + Faktor X (FX).

@@ -106,7 +106,7 @@ export default function StaffApp() {
               <ShieldCheck className="h-5 w-5" />
             </span>
             <div className="leading-tight">
-              <p className="text-sm font-bold text-stone-900">MyHerbalis</p>
+              <p className="text-sm font-bold text-stone-900">My Herbalis</p>
               <p className="text-xs text-stone-500">{account?.role === 'admin' ? 'Admin' : 'Konsultan'}</p>
             </div>
           </div>

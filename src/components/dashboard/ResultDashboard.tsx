@@ -55,7 +55,7 @@ export default function ResultDashboard({
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
             <img src="/favicon.svg" alt="" className="h-8 w-8 rounded-xl" />
-            <span className="text-sm font-bold tracking-tight text-stone-900">MyHerbalis</span>
+            <span className="text-sm font-bold tracking-tight text-stone-900">My Herbalis</span>
           </div>
           <button
             type="button"

@@ -1,5 +1,5 @@
 [Unit]
-Description=Penghapusan harian respons kedaluwarsa MyHerbalis
+Description=Penghapusan harian respons kedaluwarsa My Herbalis
 
 [Timer]
 OnCalendar=*-*-* 03:15:00 UTC

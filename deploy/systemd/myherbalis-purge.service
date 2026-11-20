@@ -1,5 +1,5 @@
 [Unit]
-Description=MyHerbalis hapus respons kedaluwarsa
+Description=My Herbalis hapus respons kedaluwarsa
 After=postgresql.service
 
 [Service]

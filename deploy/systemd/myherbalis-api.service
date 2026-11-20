@@ -1,5 +1,5 @@
 [Unit]
-Description=MyHerbalis API
+Description=My Herbalis API
 After=network.target postgresql.service
 Wants=postgresql.service
 

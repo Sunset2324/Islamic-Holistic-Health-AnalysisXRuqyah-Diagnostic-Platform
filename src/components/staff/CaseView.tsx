@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { ArrowLeft, CheckCircle2, Eye, Printer, Save, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Eye, Save, ShieldAlert } from 'lucide-react';
 import HeatColdBalanceCard from '@/components/dashboard/HeatColdBalanceCard';
 import PillarBars from '@/components/dashboard/PillarBars';
 import RuqyahAlertCard from '@/components/dashboard/RuqyahAlertCard';
@@ -9,10 +8,12 @@ import { RUQYAH_CONDITIONS, type RuqyahConditionId } from '@/data/conditions';
 import { INDICATORS } from '@/data/indicators';
 import { computeHeatColdBalance } from '@/lib/balance';
 import { computeAssessment, concerningTags, sanitizeTagSelections } from '@/lib/Hhs';
+import { buildPatientReport } from '@/lib/patientReport';
 import { assessRuqyah } from '@/lib/ruqyah';
 import { staffApi, staffErrorMessage, type ConsultationDetail, type Report, type StaffAccount } from '@/lib/staffApi';
 import PatientPhotos from './PatientPhotos';
 import PatientReport from './PatientReport';
+import ReportShareActions from './ReportShareActions';
 import { Field, GlassCard, Notice, Spinner, StatusChip } from './ui';
 import { formatDateTime } from './format';
 
@@ -113,22 +114,12 @@ export default function CaseView({ id, account, onBack, onAuthError }: Props) {
     }
   }
 
-  const reportProps = {
+  const patientReport = buildPatientReport(
     intake,
-    answers,
-    assessment,
-    balance,
     report,
-    consultantName: data.consultant.displayName ?? data.consultant.email,
-    date: data.finalizedAt ? new Date(data.finalizedAt) : new Date(),
-  };
-  function printReport() {
-    // Nama file PDF bawaan browser diambil dari judul halaman.
-    const previous = document.title;
-    document.title = `Laporan MyHerbalis - ${intake.name || 'Pasien'}`;
-    window.addEventListener('afterprint', () => (document.title = previous), { once: true });
-    window.print();
-  }
+    data.consultant.displayName ?? data.consultant.email,
+    data.finalizedAt ? new Date(data.finalizedAt) : new Date(),
+  );
 
   return (
     <div className="space-y-6">
@@ -285,27 +276,20 @@ export default function CaseView({ id, account, onBack, onAuthError }: Props) {
 
           <GlassCard
             title={data.status === 'final' ? 'Laporan untuk pasien' : 'Pratinjau laporan untuk pasien'}
-            actions={
-              data.status === 'final' && (
-                <button type="button" onClick={printReport} className="btn-glass">
-                  <Printer className="h-4 w-4" /> Cetak / PDF
-                </button>
-              )
-            }
           >
+            {data.status === 'final' ? (
+              <div className="mb-4">
+                <ReportShareActions data={patientReport} />
+              </div>
+            ) : (
+              <p className="mb-4 text-xs text-stone-500">Tombol Download PDF dan WhatsApp muncul setelah laporan final.</p>
+            )}
             <div className="rounded-xl border border-stone-200 bg-white p-6">
-              <PatientReport {...reportProps} />
+              <PatientReport data={patientReport} />
             </div>
           </GlassCard>
         </div>
       </div>
-      {data.status === 'final' &&
-        createPortal(
-          <div className="print-only">
-            <PatientReport {...reportProps} />
-          </div>,
-          document.body,
-        )}
     </div>
   );
 }

@@ -29,7 +29,7 @@ export function LoginScreen({ onDone }: { onDone: (account: StaffAccount) => voi
         <form onSubmit={submit} className="space-y-4">
           <div>
             <h1 className="text-xl font-bold text-stone-900">Masuk staf</h1>
-            <p className="mt-1 text-sm text-stone-600">Khusus konsultan dan admin MyHerbalis.</p>
+            <p className="mt-1 text-sm text-stone-600">Khusus konsultan dan admin My Herbalis.</p>
           </div>
           <Field label="Email">
             <input type="email" required autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} className="input-glass" />

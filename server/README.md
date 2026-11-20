@@ -1,4 +1,4 @@
-# Server MyHerbalis (tahap awal)
+# Server My Herbalis (tahap awal)
 
 Sudah ada: respons pasien tamu (`/api/submissions`), kode akses, pembersih gambar (`src/sanitizeImage.ts`).
 Belum ada: login/akun (Better Auth), sisi konsultan, unggah foto, penghapusan terjadwal.
