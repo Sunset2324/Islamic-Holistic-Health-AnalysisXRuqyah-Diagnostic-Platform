@@ -29,8 +29,8 @@ export default function SavedSubmissionBanner({ restore, onOpen }: SavedSubmissi
     );
   }
   return (
-    <div className="space-y-2 rounded-xl border border-teal-200 bg-teal-50 p-4" role="status">
-      <p className="flex items-start gap-2 text-sm leading-[1.5] text-teal-950">
+    <div className="space-y-2 rounded-xl border border-mint-200 bg-mint-50 p-4" role="status">
+      <p className="flex items-start gap-2 text-sm leading-[1.5] text-mint-950">
         <History className="mt-0.5 h-4 w-4 shrink-0" />
         <span>
           {restore.locked
@@ -38,7 +38,7 @@ export default function SavedSubmissionBanner({ restore, onOpen }: SavedSubmissi
             : `Anda punya jawaban tersimpan${restore.daysLeft !== null ? ` (sisa ${restore.daysLeft} hari untuk mengubahnya)` : ''}.`}
         </span>
       </p>
-      <button type="button" onClick={onOpen} className="rounded-lg bg-teal-700 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-800">
+      <button type="button" onClick={onOpen} className="rounded-lg bg-mint-700 px-4 py-2 text-xs font-semibold text-white hover:bg-mint-800">
         Lihat hasil tersimpan
       </button>
     </div>

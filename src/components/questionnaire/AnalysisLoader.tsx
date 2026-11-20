@@ -21,7 +21,7 @@ export default function AnalysisLoader({ onDone }: AnalysisLoaderProps) {
   }, [onDone]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-stone-50 px-6 text-center">
+    <div className="patient-bg flex min-h-screen flex-col items-center justify-center px-6 text-center">
       <div className="relative h-56 w-56">
         {Array.from({ length: BEAD_COUNT }, (_, index) => {
           const angle = (index / BEAD_COUNT) * 2 * Math.PI - Math.PI / 2;
@@ -32,7 +32,7 @@ export default function AnalysisLoader({ onDone }: AnalysisLoaderProps) {
             <span
               key={index}
               className={`absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-300 ${
-                lit ? 'scale-125 bg-teal-600' : 'bg-stone-300'
+                lit ? 'scale-125 bg-mint-500' : 'bg-lavender-200'
               }`}
               style={{ left: `${x}%`, top: `${y}%` }}
             />

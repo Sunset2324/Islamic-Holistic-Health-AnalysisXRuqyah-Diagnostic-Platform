@@ -41,6 +41,8 @@ export interface ConsultationDetail extends Omit<ConsultationSummary, 'patientNa
   questionnaireVersion: string;
   algorithmVersion: string;
   report: Report;
+  /** Foto lidah dari pasien (isi diambil terpisah lewat staffApi.image). */
+  images: { id: string; bytes: number; createdAt: string }[];
 }
 export interface AccountRow extends StaffAccount {
   createdAt: string;
@@ -97,6 +99,24 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   return json as T;
 }
 
+/** Foto lidah sebagai blob (dengan header gerbang + cookie). Hanya image/webp yang diterima. */
+async function fetchImage(consultationId: string, imageId: string): Promise<Blob> {
+  let res: Response;
+  try {
+    res = await fetch(`/api/staff/consultations/${consultationId}/images/${imageId}`, {
+      credentials: 'same-origin',
+      headers: { 'x-staff-gate': staffGate },
+      cache: 'no-store',
+    });
+  } catch {
+    throw new StaffApiError(0, 'network');
+  }
+  if (!res.ok) throw new StaffApiError(res.status, res.status === 401 ? 'unauthenticated' : 'not_found');
+  const blob = await res.blob();
+  if (blob.type !== 'image/webp') throw new StaffApiError(500, 'server');
+  return blob;
+}
+
 export const staffApi = {
   me: () => call<{ account: StaffAccount }>('GET', '/auth/me'),
   login: (email: string, password: string) => call<{ account: StaffAccount }>('POST', '/auth/login', { email, password }),
@@ -108,6 +128,7 @@ export const staffApi = {
   consultation: (id: string) => call<ConsultationDetail>('GET', `/staff/consultations/${id}`),
   saveReport: (id: string, report: Report) => call<void>('PUT', `/staff/consultations/${id}`, report),
   finalize: (id: string) => call<void>('POST', `/staff/consultations/${id}/finalize`, {}),
+  image: fetchImage,
 
   accounts: () => call<{ accounts: AccountRow[] }>('GET', '/admin/accounts'),
   createConsultant: (email: string, displayName: string) => call<{ id: string; invitePath: string }>('POST', '/admin/accounts', { email, displayName }),

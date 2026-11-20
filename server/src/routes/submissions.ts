@@ -4,6 +4,17 @@ import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import type { AppConfig } from '../config.js';
 import { decrypt, encrypt, hmacHex, newAccessCode, newEditToken } from '../crypto.js';
 import { withTransaction, type Db } from '../db.js';
+import { ImageRejectedError } from '../sanitizeImage.js';
+import {
+  MAX_IMAGES_PER_SUBMISSION,
+  MAX_UPLOAD_BYTES,
+  sanitizeLimited,
+  sendImage,
+  storeImage,
+  toImageList,
+  type ImageBlobRow,
+  type ImageListRow,
+} from '../images.js';
 import { answersSchema, idParamSchema, intakeSchema, submissionBodySchema, tagSelectionsSchema, tokenSchema, type SubmissionBody } from '../validation.js';
 
 interface Deps {
@@ -53,7 +64,23 @@ const SQL = {
                FOR UPDATE`,
   revokeCodes: "UPDATE access_codes SET status = 'revoked' WHERE submission_id = ? AND status = 'active'",
   insertCode: 'INSERT INTO access_codes (id, submission_id, code_hash, expires_at) VALUES (?, ?, ?, ?)',
+  isDraft: `SELECT 1 FROM submissions
+             WHERE id = ? AND edit_token_hash = ? AND status = 'draft' AND expires_at > NOW(6)`,
+  countImages: 'SELECT COUNT(*) AS n FROM images WHERE submission_id = ?',
+  listImages: `SELECT i.id, i.bytes, i.created_at
+                 FROM images i JOIN submissions s ON s.id = i.submission_id
+                WHERE s.id = ? AND s.edit_token_hash = ? AND (s.expires_at IS NULL OR s.expires_at > NOW(6))
+                ORDER BY i.created_at`,
+  imageBlob: `SELECT b.storage_key, b.key_version, b.data_enc
+                FROM images i
+                JOIN image_blobs b ON b.storage_key = i.storage_key
+                JOIN submissions s ON s.id = i.submission_id
+               WHERE i.id = ? AND s.id = ? AND s.edit_token_hash = ? AND (s.expires_at IS NULL OR s.expires_at > NOW(6))`,
+  deleteImage: `DELETE i FROM images i JOIN submissions s ON s.id = i.submission_id
+                 WHERE i.id = ? AND s.id = ? AND s.edit_token_hash = ? AND s.status = 'draft'`,
 } as const;
+
+const imageParamSchema = idParamSchema.extend({ imageId: idParamSchema.shape.id });
 
 export function registerSubmissionRoutes(app: FastifyInstance, { db, config }: Deps): void {
   const tokenHash = (token: string) => hmacHex(config.pepper, 'edit-token', token);
@@ -145,5 +172,69 @@ export function registerSubmissionRoutes(app: FastifyInstance, { db, config }: D
     });
     if (!expiresAt) return reply.code(404).send(notFound);
     return reply.code(201).send({ code, expiresAt });
+  });
+
+  /* ------------------------------- Foto lidah (opsional) -------------------------------
+   * Badan permintaan = byte mentah (application/octet-stream). Nama file & jenis dari klien diabaikan;
+   * yang menentukan hanya isi file (lihat images.ts). */
+  app.addContentTypeParser('application/octet-stream', { parseAs: 'buffer' }, (_req, body, done) => done(null, body));
+
+  app.post(
+    '/api/submissions/:id/images',
+    { bodyLimit: MAX_UPLOAD_BYTES, config: { rateLimit: { max: 20, timeWindow: '1 hour' } } },
+    async (req, reply) => {
+      const { id } = idParamSchema.parse(req.params);
+      const token = readToken(req);
+      if (!token) return reply.code(404).send(notFound);
+      // Otorisasi dulu, baru kerja berat.
+      const [ok] = await db.execute<RowDataPacket[]>(SQL.isDraft, [id, tokenHash(token)]);
+      if (!ok.length) return reply.code(404).send(notFound);
+      if (!Buffer.isBuffer(req.body)) return reply.code(415).send({ error: 'unsupported_media_type' });
+
+      let clean;
+      try {
+        clean = await sanitizeLimited(req.body);
+      } catch (err) {
+        if (err instanceof ImageRejectedError) return reply.code(422).send({ error: 'image_rejected', reason: err.code });
+        throw err;
+      }
+
+      const stored = await withTransaction(db, async (conn) => {
+        const [locked] = await conn.execute<ExpiryRow[]>(SQL.lockDraft, [id, tokenHash(token)]);
+        if (!locked[0]) return 'not_found' as const;
+        const [count] = await conn.execute<(RowDataPacket & { n: number })[]>(SQL.countImages, [id]);
+        if (Number(count[0]?.n ?? 0) >= MAX_IMAGES_PER_SUBMISSION) return 'limit' as const;
+        return storeImage(conn, config.keyRing, { submissionId: id }, clean);
+      });
+      if (stored === 'not_found') return reply.code(404).send(notFound);
+      if (stored === 'limit') return reply.code(409).send({ error: 'image_limit', max: MAX_IMAGES_PER_SUBMISSION });
+      return reply.code(201).send(stored);
+    },
+  );
+
+  app.get('/api/submissions/:id/images', { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } }, async (req, reply) => {
+    const { id } = idParamSchema.parse(req.params);
+    const token = readToken(req);
+    if (!token) return reply.code(404).send(notFound);
+    const [rows] = await db.execute<ImageListRow[]>(SQL.listImages, [id, tokenHash(token)]);
+    return { images: toImageList(rows), max: MAX_IMAGES_PER_SUBMISSION };
+  });
+
+  app.get('/api/submissions/:id/images/:imageId', { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } }, async (req, reply) => {
+    const { id, imageId } = imageParamSchema.parse(req.params);
+    const token = readToken(req);
+    if (!token) return reply.code(404).send(notFound);
+    const [rows] = await db.execute<ImageBlobRow[]>(SQL.imageBlob, [imageId, id, tokenHash(token)]);
+    if (!rows[0]) return reply.code(404).send(notFound);
+    return sendImage(reply, config.keyRing, rows[0]);
+  });
+
+  app.delete('/api/submissions/:id/images/:imageId', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async (req, reply) => {
+    const { id, imageId } = imageParamSchema.parse(req.params);
+    const token = readToken(req);
+    if (!token) return reply.code(404).send(notFound);
+    const [res] = await db.execute<ResultSetHeader>(SQL.deleteImage, [imageId, id, tokenHash(token)]);
+    if (res.affectedRows === 0) return reply.code(404).send(notFound);
+    return reply.code(204).send();
   });
 }

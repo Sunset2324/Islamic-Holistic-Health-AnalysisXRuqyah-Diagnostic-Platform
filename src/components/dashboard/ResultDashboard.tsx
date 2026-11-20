@@ -47,11 +47,11 @@ export default function ResultDashboard({
   const firstUnanswered = assessment.unanswered[0];
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-800">
-      <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/90 backdrop-blur">
+    <div className="patient-bg text-stone-800">
+      <header className="sticky top-0 z-10 border-b border-white/70 bg-white/70 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-700 text-white">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-mint-700 text-white">
               <Leaf className="h-4 w-4" />
             </span>
             <span className="text-sm font-bold tracking-tight text-stone-900">MyHerbalis</span>
@@ -69,7 +69,7 @@ export default function ResultDashboard({
 
       <main className="mx-auto max-w-5xl space-y-8 px-6 py-10">
         <div className="animate-fade-up space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-teal-700">Hasil sementara</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-mint-700">Hasil sementara</p>
           <h1 className="text-3xl font-bold leading-[1.2] tracking-tight text-stone-900">
             Assalamu&apos;alaikum, {greetingName}.
           </h1>
@@ -91,19 +91,19 @@ export default function ResultDashboard({
 
         {assessment.complete && assessment.hhs100Display !== null && assessment.category !== null ? (
           <div className="animate-fade-up grid gap-6 lg:grid-cols-2" style={{ animationDelay: '100ms' }}>
-            <section className="rounded-3xl border border-stone-200 bg-white p-8 shadow-sm">
+            <section className="soft-card p-8">
               <ScoreRing score={assessment.hhs100Display} category={assessment.category} />
             </section>
             {SHOW_RUQYAH_TO_PATIENT && <RuqyahAlertCard ruqyah={ruqyah} answers={answers} />}
           </div>
         ) : (
-          <section className="animate-fade-up rounded-2xl bg-amber-50 p-6 ring-1 ring-amber-200" style={{ animationDelay: '100ms' }}>
-            <h2 className="text-base font-bold text-amber-950">Penilaian belum lengkap</h2>
-            <p className="mt-1 text-sm leading-[1.5] text-amber-900">
+          <section className="animate-fade-up rounded-2xl bg-peach-50 p-6 ring-1 ring-peach-200" style={{ animationDelay: '100ms' }}>
+            <h2 className="text-base font-bold text-peach-950">Penilaian belum lengkap</h2>
+            <p className="mt-1 text-sm leading-[1.5] text-peach-900">
               Skor total belum dapat dihitung karena {assessment.unanswered.length} pertanyaan belum dijawab. Pertanyaan yang
               tidak dijawab tidak dianggap bernilai 1.
             </p>
-            <ul className="mt-3 list-inside list-disc text-sm text-amber-900">
+            <ul className="mt-3 list-inside list-disc text-sm text-peach-900">
               {assessment.unanswered.map((id) => (
                 <li key={id}>{INDICATOR_BY_ID[id].title}</li>
               ))}
@@ -112,7 +112,7 @@ export default function ResultDashboard({
               <button
                 type="button"
                 onClick={() => onCompleteAnswers(INDICATORS.findIndex((indicator) => indicator.id === firstUnanswered))}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-amber-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-800"
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-peach-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-peach-800"
               >
                 Lengkapi jawaban
               </button>
@@ -120,7 +120,7 @@ export default function ResultDashboard({
           </section>
         )}
 
-        <section className="animate-fade-up rounded-3xl border border-stone-200 bg-white p-8 shadow-sm" style={{ animationDelay: '160ms' }}>
+        <section className="animate-fade-up soft-card p-8" style={{ animationDelay: '160ms' }}>
           <h2 className="text-lg font-bold text-stone-900">Empat pilar Anda</h2>
           <p className="mt-1 text-sm text-stone-600">
             Setiap pilar dinilai 0 sampai 100 dari rata-rata tiga indikatornya, lalu digabungkan dengan bobot 30-30-30-10.
@@ -131,9 +131,9 @@ export default function ResultDashboard({
         </section>
 
         {low.length > 0 && (
-          <section className="animate-fade-up rounded-3xl border border-amber-200 bg-white p-8 shadow-sm" style={{ animationDelay: '200ms' }}>
+          <section className="animate-fade-up soft-card p-8" style={{ animationDelay: '200ms' }}>
             <h2 className="flex items-center gap-2 text-lg font-bold text-stone-900">
-              <ClipboardList className="h-5 w-5 text-amber-700" />
+              <ClipboardList className="h-5 w-5 text-peach-700" />
               Indikator yang perlu perhatian
             </h2>
             <p className="mt-1 text-sm text-stone-600">Indikator berskor 1–2 tetap ditampilkan walaupun skor total baik.</p>
@@ -144,7 +144,7 @@ export default function ResultDashboard({
                   (tagId) => indicator.microTags.find((tag) => tag.id === tagId)?.label ?? tagId
                 );
                 return (
-                  <li key={indicator.id} className="rounded-2xl bg-stone-50 p-5">
+                  <li key={indicator.id} className="rounded-2xl bg-lavender-50/60 p-5">
                     <p className="text-sm font-bold text-stone-900">
                       {indicator.title} <span className="font-normal text-stone-500">· skor {score}/5</span>
                     </p>
@@ -155,7 +155,7 @@ export default function ResultDashboard({
                     {selection?.otherNote && (
                       <p className="mt-1 text-xs leading-[1.5] text-stone-600">Catatan Anda: {selection.otherNote}</p>
                     )}
-                    <p className="mt-3 text-sm leading-[1.5] text-teal-900">
+                    <p className="mt-3 text-sm leading-[1.5] text-mint-900">
                       {indicator.recommendation ?? 'Bahas area ini bersama konsultan agar langkah perbaikannya sesuai kondisi Anda.'}
                     </p>
                   </li>
@@ -167,7 +167,7 @@ export default function ResultDashboard({
 
         {showDetail && <ConditionDetail condition={RUQYAH_CONDITIONS[primary.condition]} />}
 
-        <aside className="rounded-2xl bg-amber-50 p-6 text-sm leading-[1.5] text-amber-900 ring-1 ring-amber-200">
+        <aside className="rounded-2xl bg-peach-50 p-6 text-sm leading-[1.5] text-peach-900 ring-1 ring-peach-200">
           <p className="font-semibold">Catatan penting</p>
           <p className="mt-2">
             Skor 100 bukan jaminan kesehatan dan hasil ini bukan diagnosis medis, psikologis, maupun spiritual. Saran
