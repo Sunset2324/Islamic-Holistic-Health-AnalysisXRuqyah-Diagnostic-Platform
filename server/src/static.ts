@@ -1,6 +1,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { FastifyInstance, FastifyReply } from 'fastify';
+import { STAFF_PATH_PREFIX } from './auth.js';
 
 /**
  * Menyajikan hasil build frontend (dist/) dari proses Node yang sama dengan API.
@@ -60,7 +61,7 @@ async function loadDir(root: string, dir = root, out = new Map<string, StaticFil
   return out;
 }
 
-export async function registerStatic(app: FastifyInstance, distDir: string): Promise<void> {
+export async function registerStatic(app: FastifyInstance, distDir: string, staffPath?: string): Promise<void> {
   const files = await loadDir(distDir);
   const index = files.get('/index.html');
   if (!index) throw new Error(`index.html tidak ditemukan di ${distDir}. Jalankan build frontend dulu.`);
@@ -80,6 +81,14 @@ export async function registerStatic(app: FastifyInstance, distDir: string): Pro
       // Alamat /api yang tidak dikenal tetap dijawab JSON, bukan halaman aplikasi.
       if (pathname === '/api' || pathname.startsWith('/api/')) {
         return reply.code(404).header('Cache-Control', 'no-store').send({ error: 'not_found' });
+      }
+      // Halaman staf hanya di alamat rahasia yang benar; tebakan /staf-... lain dijawab 404 biasa.
+      if (pathname.startsWith(STAFF_PATH_PREFIX)) {
+        if (!staffPath || (pathname !== staffPath && pathname !== `${staffPath}/`)) {
+          return reply.code(404).headers(FRONTEND_SECURITY_HEADERS).type('text/plain; charset=utf-8').send('Not found');
+        }
+        reply.header('X-Robots-Tag', 'noindex, nofollow, noarchive');
+        return send(reply, index, 'no-store');
       }
       const file = files.get(pathname);
       if (file && pathname !== '/index.html') {

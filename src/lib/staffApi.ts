@@ -67,13 +67,25 @@ export class StaffApiError extends Error {
   }
 }
 
+/**
+ * Bagian rahasia alamat halaman staf (/staf-<gate>). Server hanya menjawab API staf bila header ini benar;
+ * tanpa itu /api/auth|staff|admin dijawab 404.
+ */
+let staffGate = '';
+export function staffGateFromPath(pathname: string): string {
+  return /^\/staf-([0-9a-f]{16})\/?$/.exec(pathname)?.[1] ?? '';
+}
+export function setStaffGate(gate: string): void {
+  staffGate = gate;
+}
+
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`/api${path}`, {
       method,
       credentials: 'same-origin',
-      headers: body === undefined ? {} : { 'content-type': 'application/json' },
+      headers: { 'x-staff-gate': staffGate, ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {

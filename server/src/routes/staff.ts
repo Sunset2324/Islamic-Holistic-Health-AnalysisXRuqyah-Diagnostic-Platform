@@ -15,6 +15,7 @@ import {
   passwordSchema,
   readToken,
   sessionAccount,
+  staffGate,
   toStaff,
   verifyPassword,
   type StaffAccount,
@@ -125,6 +126,17 @@ export function registerStaffRoutes(app: FastifyInstance, { db, config }: Deps):
       after ? JSON.stringify(after) : null,
     ]);
   }
+
+  /* --- Gerbang alamat rahasia: API staf hanya menjawab permintaan dari halaman staf yang sah. ---
+   * Tanpa header x-staff-gate yang benar, /api/auth|staff|admin dijawab 404 seperti alamat yang tidak ada,
+   * sehingga bot tidak menemukan endpoint login untuk ditebak-tebak. */
+  const gate = staffGate(pepper);
+  app.addHook('onRequest', async (req, reply) => {
+    // Dicocokkan dengan POLA rute yang cocok (bukan URL mentah), jadi query string/trik URL tidak bisa melewatinya.
+    if (!/^\/api\/(auth|staff|admin)\//.test(req.routeOptions.url ?? '')) return;
+    const header = req.headers['x-staff-gate'];
+    if (typeof header !== 'string' || !safeEqual(header, gate)) return reply.code(404).send({ error: 'not_found' });
+  });
 
   /* --- Perlindungan CSRF: cookie SameSite=Strict + tolak permintaan pengubah dari situs lain. --- */
   app.addHook('onRequest', async (req, reply) => {
@@ -458,7 +470,7 @@ export function registerStaffRoutes(app: FastifyInstance, { db, config }: Deps):
       throw err;
     }
     await audit(db, staff, 'create', 'accounts', id, { role: 'consultant' });
-    return reply.code(201).send({ id, invitePath: invitePath(inviteToken(pepper, { id, password_hash: null })) });
+    return reply.code(201).send({ id, invitePath: invitePath(pepper, inviteToken(pepper, { id, password_hash: null })) });
   });
 
   /** Tautan undangan baru (juga berfungsi sebagai reset password). Sesi akun itu otomatis berakhir setelah dipakai. */
@@ -468,7 +480,7 @@ export function registerStaffRoutes(app: FastifyInstance, { db, config }: Deps):
     const row = await loadAccountRow(db, 'id', id);
     if (!row || row.role !== 'consultant') return reply.code(404).send({ error: 'not_found' });
     await audit(db, staff, 'invite', 'accounts', id);
-    return { invitePath: invitePath(inviteToken(pepper, row)) };
+    return { invitePath: invitePath(pepper, inviteToken(pepper, row)) };
   });
 
   for (const action of ['disable', 'enable'] as const) {

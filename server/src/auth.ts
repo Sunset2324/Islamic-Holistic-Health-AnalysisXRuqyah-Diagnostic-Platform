@@ -153,8 +153,21 @@ export function inviteToken(pepper: Buffer, row: { id: string; password_hash: st
   });
 }
 
-/** Alamat (relatif) halaman undangan. Token di fragmen (#) agar tidak terkirim ke server/log/Referer. */
-export const invitePath = (token: string) => `/#/konsultan/undangan/${token}`;
+/**
+ * Alamat rahasia halaman staf, mis. /staf-3f9a0c1d7e2b4a6f. Diturunkan dari HMAC_PEPPER, jadi:
+ * unik per server, tidak tertulis di repo (repo publik), dan tidak butuh variabel environment baru.
+ * Ini lapisan TAMBAHAN (menyembunyikan halaman & API login dari bot/penebak), bukan pengganti login.
+ * Ganti HMAC_PEPPER => alamat ikut berganti (dan semua sesi/undangan lama tidak berlaku).
+ */
+export const STAFF_PATH_PREFIX = '/staf-';
+export function staffBasePath(pepper: Buffer): string {
+  return `${STAFF_PATH_PREFIX}${hmacHex(pepper, 'staff-path', 'v1').slice(0, 16)}`;
+}
+/** Nilai header x-staff-gate yang wajib dikirim frontend staf (= bagian rahasia alamat). */
+export const staffGate = (pepper: Buffer) => staffBasePath(pepper).slice(STAFF_PATH_PREFIX.length);
+
+/** Alamat (relatif) undangan. Token di fragmen (#) agar tidak terkirim ke server/log/Referer. */
+export const invitePath = (pepper: Buffer, token: string) => `${staffBasePath(pepper)}#undangan=${token}`;
 
 /**
  * Penguncian login per email (di memori proses; Hostinger menjalankan satu proses).

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ClipboardList, LogOut, ScrollText, ShieldCheck, Users } from 'lucide-react';
-import { staffApi, StaffApiError, type StaffAccount } from '@/lib/staffApi';
+import { setStaffGate, staffApi, StaffApiError, staffGateFromPath, type StaffAccount } from '@/lib/staffApi';
 import AdminAccounts from './AdminAccounts';
 import AdminAudit from './AdminAudit';
 import CaseView from './CaseView';
@@ -10,13 +10,16 @@ import { Spinner } from './ui';
 
 type Tab = 'consultations' | 'accounts' | 'audit';
 
-/** Token undangan dari alamat #/konsultan/undangan/<token>. Token di fragmen: tidak pernah terkirim ke server/log. */
+// Dipasang sekali saat modul dimuat: semua panggilan API staf membawa header gerbang dari alamat halaman.
+setStaffGate(staffGateFromPath(window.location.pathname));
+
+/** Token undangan dari alamat /staf-<kode>#undangan=<token>. Token di fragmen: tidak pernah terkirim ke server/log. */
 function inviteFromHash(): string | null {
-  const match = /^#\/konsultan\/undangan\/([A-Za-z0-9_.-]{20,512})$/.exec(window.location.hash);
+  const match = /^#undangan=([A-Za-z0-9_.-]{20,512})$/.exec(window.location.hash);
   return match?.[1] ?? null;
 }
 function clearInviteFromUrl() {
-  window.history.replaceState(null, '', `${window.location.pathname}#/konsultan`);
+  window.history.replaceState(null, '', window.location.pathname);
 }
 
 export default function StaffApp() {
