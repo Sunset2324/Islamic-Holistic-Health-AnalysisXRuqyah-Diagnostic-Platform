@@ -95,10 +95,21 @@
   }
 }
 
-/* Cetak laporan konsultan: hanya laporan untuk pasien yang tercetak. */
+/* Laporan pasien (pratinjau & cetak). */
+.report-heat { background: #fb9163; }
+.report-cold { background: #aa95f0; }
+.print-only { display: none; }
+
+/*
+ * Cetak laporan konsultan: seluruh aplikasi (#root) disembunyikan dengan display:none sehingga tidak menyisakan
+ * halaman kosong; yang tercetak hanya salinan laporan pasien (portal .print-only di <body>).
+ */
+@page { size: A4; margin: 16mm 14mm; }
 @media print {
-  .staff-bg::before, .staff-bg::after { display: none; }
-  body * { visibility: hidden; }
-  #patient-report, #patient-report * { visibility: visible; }
-  #patient-report { position: absolute; left: 0; top: 0; width: 100%; border: 0; }
+  html, body { background: #fff !important; }
+  #root { display: none !important; }
+  .print-only { display: block; }
+  .print-only * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .report-block, .report tr { break-inside: avoid; }
+  .report h2 { break-after: avoid; }
 }
