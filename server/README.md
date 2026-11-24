@@ -25,6 +25,24 @@ MariaDB/MySQL (Hostinger: MariaDB 11.8). Skema: file impor `myherbalis_hostinger
 setiap query memakai prepared statement, dan penerbitan kode akses dijalankan dalam transaksi `SELECT ... FOR UPDATE`.
 Dari aplikasi di Hostinger, `DATABASE_URL` memakai host `127.0.0.1`, bukan `srvNNNN.hstgr.io`.
 
+## Uji coba analisis foto lidah (Claude API)
+Modul `src/tongue/` (blueprint bagian 10) menilai Warna (merah/putih), Bentuk (tipis/tebal), dan Tekstur
+(lembut/kasar/berparit), ditambah `tidak_dapat_ditentukan` dan kelayakan foto. Belum terhubung ke database atau
+endpoint; untuk sekarang dijalankan lewat baris perintah agar akurasinya bisa dinilai dulu.
+
+1. Buat API key sendiri di Claude Console (sebaiknya kunci khusus dengan batas biaya).
+2. Tulis `ANTHROPIC_API_KEY=...` di `server/.env` (sudah di-gitignore). Jangan kirim kunci ke siapa pun, termasuk ke AI.
+3. Jalankan dengan foto uji (bukan foto pasien sungguhan):
+```bash
+cd server && npm install
+node --env-file=.env tongue.mjs foto1.jpg folder-foto/ --csv hasil.csv
+node --env-file=.env tongue.mjs folder-foto/ --model claude-haiku-5-5 --csv hasil-haiku.csv   # bandingkan model
+```
+Setiap foto dibersihkan `sanitizeImage` dulu (sama seperti di aplikasi); hanya WebP hasil pembersihan yang dikirim,
+tanpa nama atau data kuesioner. Jawaban divalidasi ulang dengan Zod. `hasil.csv` punya kolom kosong
+`label_warna`, `label_bentuk`, `label_tekstur` untuk diisi konsultan, supaya hasil AI bisa dibandingkan dengan penilaian manusia.
+Asumsi arti tiap indikator ada di `src/tongue/prompt.ts`; setiap perubahan prompt wajib menaikkan `PROMPT_VERSION`.
+
 ## Tes
 ```bash
 npm test     # tes unit (crypto, gambar); tes database dilewati bila TEST_DATABASE_URL tidak ada
