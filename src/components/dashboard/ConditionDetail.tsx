@@ -13,7 +13,7 @@ export default function ConditionDetail({ condition }: ConditionDetailProps) {
   ];
 
   return (
-    <section className="space-y-8 rounded-3xl border border-stone-200 bg-white p-8 shadow-sm">
+    <section className="space-y-8 soft-card p-8">
       <header className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">Kondisi {condition.id}</p>
         <div className="flex flex-wrap items-baseline gap-3">
@@ -38,8 +38,8 @@ export default function ConditionDetail({ condition }: ConditionDetailProps) {
 
       <div className="grid gap-4 md:grid-cols-3">
         {lenses.map(({ icon: Icon, title, body }) => (
-          <article key={title} className="rounded-2xl bg-stone-50 p-5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-teal-700 shadow-sm">
+          <article key={title} className="rounded-2xl bg-lavender-50/60 p-5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-mint-700 shadow-sm">
               <Icon className="h-4 w-4" />
             </span>
             <h3 className="mt-4 text-sm font-bold text-stone-900">{title}</h3>
@@ -50,13 +50,13 @@ export default function ConditionDetail({ condition }: ConditionDetailProps) {
 
       <div className="space-y-4">
         <h3 className="flex items-center gap-2 text-base font-bold text-stone-900">
-          <Landmark className="h-4 w-4 text-teal-700" />
+          <Landmark className="h-4 w-4 text-mint-700" />
           Langkah yang bisa dijalani
         </h3>
         <ul className="space-y-3">
           {condition.recommendations.map((item) => (
             <li key={item} className="flex items-start gap-3 text-sm leading-[1.5] text-stone-700">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-mint-50 text-mint-700">
                 <Check className="h-3 w-3" />
               </span>
               {item}

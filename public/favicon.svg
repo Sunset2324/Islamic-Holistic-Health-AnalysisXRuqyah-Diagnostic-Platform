@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>My Herbalis</title>
+  <defs>
+    <linearGradient id="mh-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3fb68f"/>
+      <stop offset="1" stop-color="#1d6d56"/>
+    </linearGradient>
+    <radialGradient id="mh-sun" cx="0.4" cy="0.38" r="0.7">
+      <stop offset="0" stop-color="#fff1e4"/>
+      <stop offset="1" stop-color="#ffb68f"/>
+    </radialGradient>
+    <radialGradient id="mh-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffd4ba" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#ffd4ba" stop-opacity="0"/>
+    </radialGradient>
+    <mask id="mh-crescent">
+      <rect width="64" height="64" fill="#fff"/>
+      <circle cx="34.600" cy="19.200" r="4.300" fill="#000"/>
+    </mask>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#mh-bg)"/>
+  <!-- Yin-yang: sisi terang (siang) memeluk bulan sabit, sisi gelap (malam) memeluk matahari. Keseimbangan panas-dingin. -->
+  <circle cx="32" cy="32" r="24" fill="#ffffff" opacity=".1"/>
+  <circle cx="32" cy="32" r="21.500" fill="#fff6e8"/>
+  <path d="M32 10.500A21.500 21.500 0 0 0 32 53.500A10.750 10.750 0 0 0 32 32A10.750 10.750 0 0 1 32 10.500Z" fill="#17594a"/>
+  <circle cx="32" cy="32" r="21.500" fill="none" stroke="#fff6e8" stroke-width="1.500"/>
+  <!-- matahari di sisi gelap -->
+  <circle cx="32" cy="42.750" r="7.500" fill="url(#mh-glow)"/>
+  <circle cx="32" cy="42.750" r="4.300" fill="url(#mh-sun)"/>
+  <!-- bulan sabit di sisi terang -->
+  <circle cx="32" cy="21.250" r="5" fill="#30a882" mask="url(#mh-crescent)"/>
+</svg>
