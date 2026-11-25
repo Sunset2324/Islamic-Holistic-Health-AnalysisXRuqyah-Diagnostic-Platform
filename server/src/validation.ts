@@ -10,8 +10,13 @@ export const INDICATOR_IDS = [
 
 const text = (max: number) => z.string().max(max);
 
+/** Cerminan GENDERS di src/types/intake.ts. */
+export const GENDERS = ['laki-laki', 'perempuan'] as const;
+
 export const intakeSchema = z.strictObject({
-  name: text(60),
+  // Wajib: spasi saja dianggap kosong.
+  name: z.string().trim().min(1).max(60),
+  gender: z.enum(GENDERS),
   age: z.number().int().min(0).max(120),
   mainComplaint: text(1000),
   complaintDuration: text(200),

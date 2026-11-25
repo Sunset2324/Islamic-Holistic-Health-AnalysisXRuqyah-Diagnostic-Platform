@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
-import { ArrowLeft, ArrowRight, CalendarClock, HeartHandshake } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CalendarClock, Check, HeartHandshake } from 'lucide-react';
 import { ASSESSMENT_PERIOD_LABEL, COMPLAINT_DETAIL_MAX_LENGTH, COMPLAINT_MAX_LENGTH, COMPLAINT_REQUIRED } from '@/config';
-import type { PatientIntake } from '@/types/intake';
+import { GENDERS, GENDER_LABELS, isGender, type Gender, type PatientIntake } from '@/types/intake';
 
 interface PatientIntakeFormProps {
   initial: PatientIntake | null;
@@ -10,6 +10,8 @@ interface PatientIntakeFormProps {
 }
 
 interface FormErrors {
+  name?: string;
+  gender?: string;
   age?: string;
   mainComplaint?: string;
 }
@@ -21,6 +23,9 @@ const inputClass = 'input-soft';
 
 export default function PatientIntakeForm({ initial, onSubmit, onBack }: PatientIntakeFormProps) {
   const [name, setName] = useState(initial?.name ?? '');
+  // Data tersimpan dari versi lama bisa belum punya gender: mulai kosong agar pasien memilih.
+  const initialGender: unknown = initial?.gender;
+  const [gender, setGender] = useState<Gender | ''>(isGender(initialGender) ? initialGender : '');
   const [age, setAge] = useState(initial ? String(initial.age) : '');
   const [mainComplaint, setMainComplaint] = useState(initial?.mainComplaint ?? '');
   const [complaintDuration, setComplaintDuration] = useState(initial?.complaintDuration ?? '');
@@ -34,6 +39,8 @@ export default function PatientIntakeForm({ initial, onSubmit, onBack }: Patient
 
     const parsedAge = Number(age);
     const nextErrors: FormErrors = {};
+    if (name.trim().length === 0) nextErrors.name = 'Mohon isi nama panggilan Anda.';
+    if (!isGender(gender)) nextErrors.gender = 'Mohon pilih jenis kelamin.';
     if (!age || !Number.isInteger(parsedAge) || parsedAge < MIN_AGE || parsedAge > MAX_AGE) {
       nextErrors.age = `Masukkan usia antara ${MIN_AGE} dan ${MAX_AGE} tahun.`;
     }
@@ -41,10 +48,11 @@ export default function PatientIntakeForm({ initial, onSubmit, onBack }: Patient
       nextErrors.mainComplaint = 'Mohon isi keluhan utama Anda.';
     }
     setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
+    if (Object.keys(nextErrors).length > 0 || !isGender(gender)) return;
 
     onSubmit({
       name: name.trim(),
+      gender,
       age: parsedAge,
       mainComplaint: mainComplaint.trim(),
       complaintDuration: complaintDuration.trim(),
@@ -69,7 +77,7 @@ export default function PatientIntakeForm({ initial, onSubmit, onBack }: Patient
         <p className="text-xs font-semibold uppercase tracking-wider text-mint-700">Langkah 1 dari 2</p>
         <h1 className="mt-2 text-3xl font-bold leading-[1.2] tracking-tight text-stone-900">Ceritakan sedikit tentang Anda</h1>
         <p className="mt-3 text-sm leading-[1.5] text-stone-600">
-          Informasi ini membantu konsultan memahami kondisi Anda. Semua bagian selain usia boleh dikosongkan.
+          Informasi ini membantu konsultan memahami kondisi Anda. Nama, jenis kelamin, dan usia wajib diisi; bagian lain boleh dikosongkan.
         </p>
 
         <div className="mt-6 flex gap-3 rounded-3xl bg-mint-50 p-4 ring-1 ring-mint-200">
@@ -92,24 +100,38 @@ export default function PatientIntakeForm({ initial, onSubmit, onBack }: Patient
         <form onSubmit={handleSubmit} noValidate className="mt-10 space-y-8">
           <div className="grid gap-6 sm:grid-cols-2">
             <label className="block space-y-2">
-              <span className="text-sm font-semibold text-stone-800">Nama panggilan</span>
+              <span className="text-sm font-semibold text-stone-800">
+                Nama panggilan <span className="text-peach-800" aria-hidden>*</span>
+              </span>
               <input
                 type="text"
                 value={name}
-                onChange={(event) => setName(event.target.value)}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+                }}
                 maxLength={60}
-                placeholder="Opsional"
+                required
+                autoComplete="nickname"
+                placeholder="Contoh: Fulan"
+                aria-invalid={Boolean(errors.name)}
                 className={inputClass}
               />
+              {errors.name && <span className="text-xs text-peach-800">{errors.name}</span>}
             </label>
 
             <label className="block space-y-2">
-              <span className="text-sm font-semibold text-stone-800">Usia</span>
+              <span className="text-sm font-semibold text-stone-800">
+                Usia <span className="text-peach-800" aria-hidden>*</span>
+              </span>
               <input
                 type="number"
                 inputMode="numeric"
                 value={age}
-                onChange={(event) => setAge(event.target.value)}
+                onChange={(event) => {
+                  setAge(event.target.value);
+                  if (errors.age) setErrors((prev) => ({ ...prev, age: undefined }));
+                }}
                 placeholder="Contoh: 28"
                 aria-invalid={Boolean(errors.age)}
                 className={inputClass}
@@ -117,6 +139,49 @@ export default function PatientIntakeForm({ initial, onSubmit, onBack }: Patient
               {errors.age && <span className="text-xs text-peach-800">{errors.age}</span>}
             </label>
           </div>
+
+          {/* Pilihan tunggal bergaya centang: input radio asli (keyboard & pembaca layar), kotak centang sebagai tampilan. */}
+          <fieldset className="space-y-2" aria-invalid={Boolean(errors.gender)}>
+            <legend className="text-sm font-semibold text-stone-800">
+              Jenis kelamin <span className="text-peach-800" aria-hidden>*</span>
+            </legend>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {GENDERS.map((value) => {
+                const checked = gender === value;
+                return (
+                  <label
+                    key={value}
+                    className={`flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3 ring-1 transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-mint-500 ${
+                      checked ? 'bg-mint-50 ring-mint-400' : 'bg-white ring-stone-200 hover:ring-stone-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="gender"
+                      value={value}
+                      checked={checked}
+                      onChange={() => {
+                        setGender(value);
+                        if (errors.gender) setErrors((prev) => ({ ...prev, gender: undefined }));
+                      }}
+                      required
+                      className="sr-only"
+                    />
+                    <span
+                      aria-hidden
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition ${
+                        checked ? 'border-mint-600 bg-mint-600 text-white' : 'border-stone-300 bg-white'
+                      }`}
+                    >
+                      {checked && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+                    </span>
+                    <span className="text-sm font-medium text-stone-800">{GENDER_LABELS[value]}</span>
+                  </label>
+                );
+              })}
+            </div>
+            {errors.gender && <span className="block text-xs text-peach-800">{errors.gender}</span>}
+          </fieldset>
 
           <label className="block space-y-2">
             <span className="flex items-baseline justify-between gap-4">

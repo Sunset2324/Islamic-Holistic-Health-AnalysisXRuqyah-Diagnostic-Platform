@@ -5,6 +5,7 @@ import type { PatientIntake } from '@/types/intake';
 
 const intake: PatientIntake = {
   name: 'Fulanah',
+  gender: 'perempuan',
   age: 31,
   mainComplaint: 'Sulit tidur',
   complaintDuration: '',

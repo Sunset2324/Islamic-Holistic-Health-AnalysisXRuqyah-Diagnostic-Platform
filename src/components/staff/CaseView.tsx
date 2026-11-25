@@ -9,6 +9,7 @@ import { INDICATORS } from '@/data/indicators';
 import { computeHeatColdBalance } from '@/lib/balance';
 import { computeAssessment, concerningTags, sanitizeTagSelections } from '@/lib/Hhs';
 import { buildPatientReport } from '@/lib/patientReport';
+import { GENDER_LABELS, isGender } from '@/types/intake';
 import { assessRuqyah } from '@/lib/ruqyah';
 import { staffApi, staffErrorMessage, type ConsultationDetail, type Report, type StaffAccount } from '@/lib/staffApi';
 import PatientPhotos from './PatientPhotos';
@@ -127,7 +128,8 @@ export default function CaseView({ id, account, onBack, onAuthError }: Props) {
         <div className="space-y-1">
           <BackButton onBack={onBack} />
           <h1 className="flex flex-wrap items-center gap-3 text-2xl font-bold text-stone-900">
-            {intake.name || 'Tanpa nama'}, {intake.age} tahun <StatusChip status={data.status} />
+            {intake.name || 'Tanpa nama'}, {isGender(intake.gender) && <>{GENDER_LABELS[intake.gender]}, </>}
+            {intake.age} tahun <StatusChip status={data.status} />
           </h1>
           <p className="text-sm text-stone-600">
             Konsultan: {data.consultant.displayName ?? data.consultant.email} · Dibuka {formatDateTime(data.createdAt)}

@@ -19,6 +19,7 @@ const ID = '11111111-2222-4333-8444-555555555555';
 
 const patient: PatientIntake = {
   name: 'Budi',
+  gender: 'laki-laki',
   age: 30,
   mainComplaint: 'Sulit tidur',
   complaintDuration: '3 bulan',
@@ -123,14 +124,24 @@ describe('token hanya di header, tidak di URL', () => {
 });
 
 describe('buildPayload sesuai skema server', () => {
-  it('nama kosong tetap string kosong dan versi diambil dari config', () => {
-    const payload = buildPayload({ ...patient, name: undefined as unknown as string }, {}, {});
-    expect(payload.intake.name).toBe('');
+  it('nama dirapikan, jenis kelamin ikut terkirim, versi diambil dari config', () => {
+    const payload = buildPayload({ ...patient, name: '  Budi  ' }, {}, {});
+    expect(payload.intake.name).toBe('Budi');
+    expect(payload.intake.gender).toBe('laki-laki');
     expect(payload.questionnaireVersion).toBe(QUESTIONNAIRE_VERSION);
     expect(payload.algorithmVersion).toBe(ALGORITHM_VERSION);
     expect(Object.keys(payload.intake).sort()).toEqual(
-      ['age', 'complaintDuration', 'complaintFrequency', 'complaintImpact', 'mainComplaint', 'medicalHistory', 'name'],
+      ['age', 'complaintDuration', 'complaintFrequency', 'complaintImpact', 'gender', 'mainComplaint', 'medicalHistory', 'name'],
     );
+  });
+  it('nama kosong/spasi atau jenis kelamin kosong/tidak sah ditolak sebelum dikirim', () => {
+    for (const name of ['', '   ', undefined as unknown as string]) {
+      expect(() => buildPayload({ ...patient, name }, {}, {})).toThrow(ApiError);
+    }
+    for (const gender of ['', 'L', 'lainnya', undefined] as unknown as PatientIntake['gender'][]) {
+      expect(() => buildPayload({ ...patient, gender }, {}, {})).toThrow(ApiError);
+    }
+    expect(buildPayload({ ...patient, gender: 'perempuan' }, {}, {}).intake.gender).toBe('perempuan');
   });
   it('jawaban: null dipertahankan, undefined tidak dikirim, nilai di luar 1-5 dibuang', () => {
     const payload = buildPayload(patient, { 'PL-01': 3, 'PL-02': null, 'PL-03': undefined, 'PM-01': 6, 'PM-02': 0, 'PM-03': 2.5 }, {});
