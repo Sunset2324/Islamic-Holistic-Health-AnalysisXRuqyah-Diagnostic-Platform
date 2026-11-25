@@ -1,7 +1,7 @@
 import { ALGORITHM_VERSION, QUESTIONNAIRE_VERSION } from '@/config';
 import { INDICATORS, type IndicatorId } from '@/data/indicators';
 import type { Answers, TagSelections } from '@/lib/Hhs';
-import type { PatientIntake } from '@/types/intake';
+import { isGender, type PatientIntake } from '@/types/intake';
 
 /**
  * Klien API respons pasien tamu. Kontrak mengikuti server/src/validation.ts dan server/src/routes/submissions.ts.
@@ -95,10 +95,13 @@ async function readJson<T>(response: Response): Promise<T> {
 
 const clamp = (value: string, max: number) => (value.length > max ? value.slice(0, max) : value);
 
-/** Menyusun muatan sesuai skema server. Nama kosong dikirim '' (bukan undefined); jawaban `undefined` tidak dikirim. */
+/** Menyusun muatan sesuai skema server. Nama/jenis kelamin kosong ditolak (ApiError 'invalid'); jawaban `undefined` tidak dikirim. */
 export function buildPayload(patient: PatientIntake, answers: Answers, tagSelections: TagSelections): SubmissionPayload {
   const age = Math.trunc(Number(patient.age));
   if (!Number.isFinite(age) || age < LIMITS.age.min || age > LIMITS.age.max) throw new ApiError('invalid');
+  // Nama dan jenis kelamin wajib (server juga menolak bila kosong/tidak sah).
+  const name = clamp((patient.name ?? '').trim(), LIMITS.name);
+  if (name.length === 0 || !isGender(patient.gender)) throw new ApiError('invalid');
 
   const cleanAnswers: SubmissionPayload['answers'] = {};
   const cleanTags: TagSelections = {};
@@ -116,7 +119,8 @@ export function buildPayload(patient: PatientIntake, answers: Answers, tagSelect
 
   return {
     intake: {
-      name: clamp(patient.name ?? '', LIMITS.name),
+      name,
+      gender: patient.gender,
       age,
       mainComplaint: clamp(patient.mainComplaint ?? '', LIMITS.mainComplaint),
       complaintDuration: clamp(patient.complaintDuration ?? '', LIMITS.detail),

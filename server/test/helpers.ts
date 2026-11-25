@@ -16,6 +16,7 @@ export function sampleBody(overrides: Partial<SubmissionBody> = {}): SubmissionB
   return {
     intake: {
       name: 'Rahasia Nama Pasien',
+      gender: 'perempuan',
       age: 34,
       mainComplaint: 'Keluhan-pribadi-unik-12345',
       complaintDuration: '3 bulan',
