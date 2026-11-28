@@ -24,13 +24,25 @@ export interface ConsultationSummary {
   finalizedAt: string | null;
 }
 export type RuqyahCondition = 'A' | 'B' | 'C' | 'D';
+export type PillarCode = 'PL' | 'PM' | 'PP' | 'FX';
+/** Laporan akhir konsultan (blueprint bagian 12). Kontrak sama dengan reportSchema di server/src/routes/staff.ts. */
 export interface Report {
-  ruqyahFinalCondition: RuqyahCondition | null;
+  /** Potensi ruqyah yang dicentang (boleh lebih dari satu). */
+  ruqyahConditions: RuqyahCondition[];
+  /** Pilar yang dicentang (boleh lebih dari satu). Minimal satu potensi (ruqyah atau pilar) untuk final. */
+  pillars: PillarCode[];
+  /** Catatan penilaian potensi (wajib untuk final). */
   ruqyahNotes: string;
   advice: string;
   clinicalNotes: string;
+  /** Kondisi psikis dan fisik: keduanya wajib untuk final. */
+  psychologicalNotes: string;
+  physicalNotes: string;
   shareRuqyah: boolean;
+  sharePillars: boolean;
   shareClinicalNotes: boolean;
+  sharePsychological: boolean;
+  sharePhysical: boolean;
 }
 export interface ConsultationDetail extends Omit<ConsultationSummary, 'patientName'> {
   patientName: string;

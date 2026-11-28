@@ -14,31 +14,57 @@ const intake: PatientIntake = {
   medicalHistory: 'Maag',
 };
 const report = (patch: Partial<Report> = {}): Report => ({
-  ruqyahFinalCondition: 'B',
+  ruqyahConditions: ['B', 'C'],
+  pillars: ['PP', 'FX'],
   ruqyahNotes: 'Observasi lanjutan.',
   advice: '1. Tidur sebelum 22.00\n2. Dzikir pagi petang',
   clinicalNotes: 'Catatan internal',
+  psychologicalNotes: 'Cemas berulang',
+  physicalNotes: 'Sering lelah',
   shareRuqyah: false,
+  sharePillars: false,
   shareClinicalNotes: false,
+  sharePsychological: false,
+  sharePhysical: false,
   ...patch,
-} as Report);
+});
 const date = new Date('2026-11-20T08:00:00+07:00');
 
 describe('laporan untuk pasien', () => {
-  it('hanya berisi saran konsultan bila ruqyah & catatan klinis tidak dicentang', () => {
+  it('hanya berisi saran konsultan bila tidak ada yang dicentang "sertakan"', () => {
     const data = buildPatientReport(intake, report(), 'Ustadzah Aminah', date);
     expect(data.sections.map((s) => s.title)).toEqual(['Saran dari konsultan']);
     const wa = reportToWhatsApp(data);
-    expect(wa).not.toContain('Catatan internal');
-    expect(wa).not.toContain('Observasi lanjutan');
+    for (const hidden of ['Catatan internal', 'Observasi lanjutan', 'Cemas berulang', 'Sering lelah', 'Potensi', 'Pola Pikir']) {
+      expect(wa).not.toContain(hidden);
+    }
     expect(wa).not.toContain('Maag');
     expect(wa).not.toMatch(/staf-|https?:/);
   });
 
-  it('menyertakan penilaian ruqyah dan catatan klinis bila dicentang', () => {
-    const data = buildPatientReport(intake, report({ shareRuqyah: true, shareClinicalNotes: true }), 'Ustadzah Aminah', date);
-    expect(data.sections.map((s) => s.title)).toEqual(['Saran dari konsultan', 'Penilaian ruqyah', 'Catatan klinis']);
-    expect(data.sections[1].lead).toBeTruthy();
+  it('semua dicentang: penilaian potensi (ruqyah + pilar), psikis, fisik, klinis', () => {
+    const all = { shareRuqyah: true, sharePillars: true, sharePsychological: true, sharePhysical: true, shareClinicalNotes: true };
+    const data = buildPatientReport(intake, report(all), 'Ustadzah Aminah', date);
+    expect(data.sections.map((s) => s.title)).toEqual(['Saran dari konsultan', 'Penilaian potensi', 'Kondisi psikis', 'Kondisi fisik', 'Catatan klinis']);
+    expect(data.sections[1]).toEqual({
+      title: 'Penilaian potensi',
+      lead: 'Potensi ruqyah: Potensi Hasad, Potensi Sihr · Pilar: Pola Pikir, Faktor X',
+      body: 'Observasi lanjutan.',
+    });
+  });
+
+  it('centang dipisah: hanya pilar -> ruqyah tidak tampil; hanya psikis -> fisik tidak tampil', () => {
+    const data = buildPatientReport(intake, report({ sharePillars: true, sharePsychological: true }), 'X', date);
+    expect(data.sections[1]?.lead).toBe('Pilar: Pola Pikir, Faktor X');
+    const wa = reportToWhatsApp(data);
+    expect(wa).not.toContain('Potensi Hasad');
+    expect(wa).toContain('Cemas berulang');
+    expect(wa).not.toContain('Sering lelah');
+  });
+
+  it('dicentang tetapi kosong -> bagian tidak ditampilkan', () => {
+    const data = buildPatientReport(intake, report({ shareRuqyah: true, ruqyahConditions: [], sharePhysical: true, physicalNotes: '  ' }), 'X', date);
+    expect(data.sections.map((s) => s.title)).toEqual(['Saran dari konsultan']);
   });
 
   it('format WhatsApp memakai *tebal* untuk judul', () => {

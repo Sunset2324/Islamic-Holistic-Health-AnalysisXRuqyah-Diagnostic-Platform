@@ -6,6 +6,7 @@ import RuqyahAlertCard from '@/components/dashboard/RuqyahAlertCard';
 import ScoreRing from '@/components/dashboard/ScoreRing';
 import { RUQYAH_CONDITIONS, type RuqyahConditionId } from '@/data/conditions';
 import { INDICATORS } from '@/data/indicators';
+import { PILLARS } from '@/data/pillars';
 import { computeHeatColdBalance } from '@/lib/balance';
 import { computeAssessment, concerningTags, sanitizeTagSelections } from '@/lib/Hhs';
 import { buildPatientReport } from '@/lib/patientReport';
@@ -72,10 +73,13 @@ export default function CaseView({ id, account, onBack, onAuthError }: Props) {
     setNotice('');
   };
   const missing = [
-    !report.ruqyahFinalCondition && 'penilaian ruqyah (kondisi A–D)',
-    !report.ruqyahNotes.trim() && 'catatan penilaian ruqyah',
+    report.ruqyahConditions.length + report.pillars.length === 0 && 'penilaian potensi (centang minimal satu)',
+    !report.ruqyahNotes.trim() && 'catatan penilaian potensi',
     !report.advice.trim() && 'saran konsultan untuk pasien',
+    !report.psychologicalNotes.trim() && 'kondisi psikis',
+    !report.physicalNotes.trim() && 'kondisi fisik',
   ].filter(Boolean) as string[];
+  const toggle = <T extends string>(list: T[], value: T, on: boolean): T[] => (on ? [...list, value] : list.filter((v) => v !== value));
 
   async function save(): Promise<boolean> {
     if (!report) return false;
@@ -210,37 +214,71 @@ export default function CaseView({ id, account, onBack, onAuthError }: Props) {
         <div className="min-w-0 space-y-6">
           <GlassCard title="Laporan konsultan">
             <fieldset disabled={readOnly || busy !== null} className="space-y-4">
-              <Field label="Penilaian ruqyah" required>
-                <select
-                  value={report.ruqyahFinalCondition ?? ''}
-                  onChange={(e) => update({ ruqyahFinalCondition: (e.target.value || null) as Report['ruqyahFinalCondition'] })}
-                  className="input-glass"
-                >
-                  <option value="">Pilih kondisi…</option>
-                  {(Object.keys(RUQYAH_CONDITIONS) as RuqyahConditionId[]).map((cid) => (
-                    <option key={cid} value={cid}>
-                      {cid}. {RUQYAH_CONDITIONS[cid].name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Catatan penilaian ruqyah" required>
+              <fieldset className="space-y-3 rounded-xl border border-white/80 bg-white/50 p-4">
+                <legend className="px-1 text-sm font-semibold text-stone-800">
+                  Penilaian potensi <span className="text-rose-700">*</span>{' '}
+                  <span className="font-normal text-stone-500">(boleh lebih dari satu, minimal satu)</span>
+                </legend>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">Potensi ruqyah</p>
+                    {(Object.keys(RUQYAH_CONDITIONS) as RuqyahConditionId[]).map((cid) => (
+                      <label key={cid} className="flex items-center gap-2 text-sm text-stone-800">
+                        <input
+                          type="checkbox"
+                          checked={report.ruqyahConditions.includes(cid)}
+                          onChange={(e) => update({ ruqyahConditions: toggle(report.ruqyahConditions, cid, e.target.checked) })}
+                        />
+                        {cid}. {RUQYAH_CONDITIONS[cid].name}
+                      </label>
+                    ))}
+                  </div>
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">Pilar</p>
+                    {PILLARS.map((p) => (
+                      <label key={p.code} className="flex items-center gap-2 text-sm text-stone-800">
+                        <input
+                          type="checkbox"
+                          checked={report.pillars.includes(p.code)}
+                          onChange={(e) => update({ pillars: toggle(report.pillars, p.code, e.target.checked) })}
+                        />
+                        {p.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </fieldset>
+              <Field label="Catatan penilaian potensi" required>
                 <textarea value={report.ruqyahNotes} maxLength={4000} onChange={(e) => update({ ruqyahNotes: e.target.value })} rows={3} className="input-glass" />
               </Field>
               <Field label="Saran konsultan untuk pasien" required>
                 <textarea value={report.advice} maxLength={8000} onChange={(e) => update({ advice: e.target.value })} rows={4} className="input-glass" />
+              </Field>
+              <Field label="Kondisi psikis" required>
+                <textarea value={report.psychologicalNotes} maxLength={4000} onChange={(e) => update({ psychologicalNotes: e.target.value })} rows={3} className="input-glass" />
+              </Field>
+              <Field label="Kondisi fisik" required>
+                <textarea value={report.physicalNotes} maxLength={4000} onChange={(e) => update({ physicalNotes: e.target.value })} rows={3} className="input-glass" />
               </Field>
               <Field label="Catatan klinis (internal)">
                 <textarea value={report.clinicalNotes} maxLength={8000} onChange={(e) => update({ clinicalNotes: e.target.value })} rows={3} className="input-glass" />
               </Field>
               <div className="space-y-2 rounded-xl border border-white/80 bg-white/50 p-4 text-sm">
                 <p className="font-semibold text-stone-800">Yang ikut dilihat pasien (bawaan: tidak)</p>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" checked={report.shareRuqyah} onChange={(e) => update({ shareRuqyah: e.target.checked })} /> Sertakan penilaian ruqyah
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" checked={report.shareClinicalNotes} onChange={(e) => update({ shareClinicalNotes: e.target.checked })} /> Sertakan catatan klinis
-                </label>
+                {(
+                  [
+                    ['shareRuqyah', 'Sertakan penilaian ruqyah'],
+                    ['sharePillars', 'Sertakan penilaian pilar'],
+                    ['sharePsychological', 'Sertakan kondisi psikis'],
+                    ['sharePhysical', 'Sertakan kondisi fisik'],
+                    ['shareClinicalNotes', 'Sertakan catatan klinis'],
+                  ] as const
+                ).map(([key, label]) => (
+                  <label key={key} className="flex items-center gap-2">
+                    <input type="checkbox" checked={report[key]} onChange={(e) => update({ [key]: e.target.checked })} /> {label}
+                  </label>
+                ))}
+                <p className="text-xs text-stone-500">Catatan penilaian potensi ikut tampil bila penilaian ruqyah atau pilar disertakan.</p>
                 <p className="text-xs text-stone-500">Hasil hitungan dan ajuan sistem tidak pernah ikut ke pasien.</p>
               </div>
             </fieldset>

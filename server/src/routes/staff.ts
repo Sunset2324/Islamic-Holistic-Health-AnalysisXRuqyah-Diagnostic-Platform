@@ -43,7 +43,13 @@ declare module 'fastify' {
  * mengenkripsi ulang semuanya dengan kunci terbaru (rotasi kunci berjalan alami).
  * ---------------------------------------------------------------------------------------------- */
 const SNAPSHOT_FIELDS = ['snapshot_intake_enc', 'snapshot_answers_enc', 'snapshot_tags_enc'] as const;
-const NOTE_FIELDS = ['ruqyah_assessment_notes_enc', 'consultant_advice_enc', 'clinical_notes_enc'] as const;
+const NOTE_FIELDS = [
+  'ruqyah_assessment_notes_enc',
+  'consultant_advice_enc',
+  'clinical_notes_enc',
+  'psychological_notes_enc',
+  'physical_notes_enc',
+] as const;
 type EncField = (typeof SNAPSHOT_FIELDS)[number] | (typeof NOTE_FIELDS)[number];
 const ctx = (consultationId: string, field: EncField) => `consultation:${consultationId}:${field}`;
 const nameCtx = (patientId: string) => `patient:${patientId}:display_name`;
@@ -67,12 +73,21 @@ interface ConsultationRow extends RowDataPacket {
   snapshot_intake_enc: Buffer;
   snapshot_answers_enc: Buffer;
   snapshot_tags_enc: Buffer;
+  /** Kolom lama (satu kondisi). Tidak ditulis lagi; isinya sudah dipindah ke ruqyah_conditions. */
   ruqyah_final_condition: 'A' | 'B' | 'C' | 'D' | null;
+  /** MariaDB SET: string "A,C" (urut definisi), "" atau null. */
+  ruqyah_conditions: string | null;
+  pillar_potentials: string | null;
   ruqyah_assessment_notes_enc: Buffer | null;
   consultant_advice_enc: Buffer | null;
   clinical_notes_enc: Buffer | null;
+  psychological_notes_enc: Buffer | null;
+  physical_notes_enc: Buffer | null;
   share_ruqyah_with_patient: number;
+  share_pillars_with_patient: number;
   share_clinical_notes_with_patient: number;
+  share_psychological_with_patient: number;
+  share_physical_with_patient: number;
   created_at: Date;
   updated_at: Date;
   finalized_at: Date | null;
@@ -89,13 +104,37 @@ const CONSULTATION_SELECT = `
     JOIN accounts a ON a.id = c.consultant_id
     JOIN patients p ON p.id = c.patient_id`;
 
+export const RUQYAH_CODES = ['A', 'B', 'C', 'D'] as const;
+export const PILLAR_CODES = ['PL', 'PM', 'PP', 'FX'] as const;
+
+/** Pilihan unik, disimpan urut sesuai daftar (sama seperti cara MariaDB menyimpan SET). */
+const pick = <T extends readonly [string, ...string[]]>(codes: T) =>
+  z
+    .array(z.enum(codes))
+    .max(codes.length)
+    .refine((v) => new Set(v).size === v.length, 'duplikat')
+    .transform((v) => codes.filter((c) => v.includes(c)));
+
+/** Isi kolom SET dari database -> daftar kode yang dikenal. */
+export function parseSet<T extends readonly string[]>(raw: string | null, codes: T): T[number][] {
+  if (!raw) return [];
+  const parts = raw.split(',');
+  return codes.filter((c) => parts.includes(c));
+}
+
 const reportSchema = z.strictObject({
-  ruqyahFinalCondition: z.enum(['A', 'B', 'C', 'D']).nullable(),
+  ruqyahConditions: pick(RUQYAH_CODES),
+  pillars: pick(PILLAR_CODES),
   ruqyahNotes: z.string().max(4000),
   advice: z.string().max(8000),
   clinicalNotes: z.string().max(8000),
+  psychologicalNotes: z.string().max(4000),
+  physicalNotes: z.string().max(4000),
   shareRuqyah: z.boolean(),
+  sharePillars: z.boolean(),
   shareClinicalNotes: z.boolean(),
+  sharePsychological: z.boolean(),
+  sharePhysical: z.boolean(),
 });
 
 const loginSchema = z.strictObject({ email: emailSchema, password: z.string().min(1).max(256) });
@@ -354,12 +393,18 @@ export function registerStaffRoutes(app: FastifyInstance, { db, config }: Deps):
       questionnaireVersion: row.questionnaire_version,
       algorithmVersion: row.algorithm_version,
       report: {
-        ruqyahFinalCondition: row.ruqyah_final_condition,
+        ruqyahConditions: parseSet(row.ruqyah_conditions, RUQYAH_CODES),
+        pillars: parseSet(row.pillar_potentials, PILLAR_CODES),
         ruqyahNotes: open<string>(keyRing, ctx(id, 'ruqyah_assessment_notes_enc'), kv, row.ruqyah_assessment_notes_enc) ?? '',
         advice: open<string>(keyRing, ctx(id, 'consultant_advice_enc'), kv, row.consultant_advice_enc) ?? '',
         clinicalNotes: open<string>(keyRing, ctx(id, 'clinical_notes_enc'), kv, row.clinical_notes_enc) ?? '',
+        psychologicalNotes: open<string>(keyRing, ctx(id, 'psychological_notes_enc'), kv, row.psychological_notes_enc) ?? '',
+        physicalNotes: open<string>(keyRing, ctx(id, 'physical_notes_enc'), kv, row.physical_notes_enc) ?? '',
         shareRuqyah: !!row.share_ruqyah_with_patient,
+        sharePillars: !!row.share_pillars_with_patient,
         shareClinicalNotes: !!row.share_clinical_notes_with_patient,
+        sharePsychological: !!row.share_psychological_with_patient,
+        sharePhysical: !!row.share_physical_with_patient,
       },
       createdAt: row.created_at,
       updatedAt: row.updated_at,
@@ -403,18 +448,27 @@ export function registerStaffRoutes(app: FastifyInstance, { db, config }: Deps):
       const note = (f: (typeof NOTE_FIELDS)[number], v: string) => (v.trim() ? seal(keyRing, ctx(id, f), v) : null);
       await conn.execute(
         `UPDATE consultations SET key_version = ?, snapshot_intake_enc = ?, snapshot_answers_enc = ?, snapshot_tags_enc = ?,
-                ruqyah_final_condition = ?, ruqyah_assessment_notes_enc = ?, consultant_advice_enc = ?, clinical_notes_enc = ?,
-                share_ruqyah_with_patient = ?, share_clinical_notes_with_patient = ?, updated_at = NOW(6)
+                ruqyah_conditions = ?, pillar_potentials = ?,
+                ruqyah_assessment_notes_enc = ?, consultant_advice_enc = ?, clinical_notes_enc = ?,
+                psychological_notes_enc = ?, physical_notes_enc = ?,
+                share_ruqyah_with_patient = ?, share_pillars_with_patient = ?, share_clinical_notes_with_patient = ?,
+                share_psychological_with_patient = ?, share_physical_with_patient = ?, updated_at = NOW(6)
           WHERE id = ?`,
         [
           keyRing.currentVersion,
           ...snap,
-          body.ruqyahFinalCondition,
+          body.ruqyahConditions.join(','),
+          body.pillars.join(','),
           note('ruqyah_assessment_notes_enc', body.ruqyahNotes),
           note('consultant_advice_enc', body.advice),
           note('clinical_notes_enc', body.clinicalNotes),
+          note('psychological_notes_enc', body.psychologicalNotes),
+          note('physical_notes_enc', body.physicalNotes),
           body.shareRuqyah,
+          body.sharePillars,
           body.shareClinicalNotes,
+          body.sharePsychological,
+          body.sharePhysical,
           id,
         ],
       );
@@ -436,7 +490,9 @@ export function registerStaffRoutes(app: FastifyInstance, { db, config }: Deps):
       );
       const row = rows[0];
       if (!row) return 'not_found' as const;
-      if (!row.ruqyah_final_condition || !row.ruqyah_assessment_notes_enc || !row.consultant_advice_enc) return 'incomplete' as const;
+      const hasPotential = parseSet(row.ruqyah_conditions, RUQYAH_CODES).length + parseSet(row.pillar_potentials, PILLAR_CODES).length > 0;
+      const notesDone = row.ruqyah_assessment_notes_enc && row.consultant_advice_enc && row.psychological_notes_enc && row.physical_notes_enc;
+      if (!hasPotential || !notesDone) return 'incomplete' as const;
       await conn.execute('SELECT id FROM patients WHERE id = ? FOR UPDATE', [row.patient_id]);
       await conn.execute('UPDATE consultations SET is_current = FALSE WHERE patient_id = ? AND is_current = TRUE', [row.patient_id]);
       await conn.execute(
