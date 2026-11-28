@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import EmergencyFooter from '@/components/common/Emergencyfooters';
 import LandingPage from '@/components/landing/LandingPage';
 import SavedSubmissionBanner from '@/components/landing/SavedSubmissionBanner';
@@ -21,6 +21,11 @@ function App() {
   // Dashboard staf (konsultan & admin) hanya di alamat rahasia /staf-<kode> (server menolak tebakan lain dengan 404).
   const isStaff = typeof window !== 'undefined' && window.location.pathname.startsWith('/staf-');
   const [step, setStep] = useState<Step>('landing');
+  // Setiap pindah langkah, mulai dari atas halaman. Tanpa ini posisi gulir kuesioner terbawa ke halaman hasil
+  // (di HP hasil terbuka hampir di dasar halaman) sehingga bagian kode konsultasi di atas tidak terlihat.
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [step]);
   const [patient, setPatient] = useState<PatientIntake | null>(null);
   const [answers, setAnswers] = useState<Answers>({});
   const [tagSelections, setTagSelections] = useState<TagSelections>({});
