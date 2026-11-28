@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
-import { ChevronRight, KeyRound, RefreshCw, Search } from 'lucide-react';
+import { ChevronRight, KeyRound, RefreshCw, ScanLine, Search } from 'lucide-react';
 import { staffApi, staffErrorMessage, type ConsultationSummary, type StaffAccount } from '@/lib/staffApi';
 import { GlassCard, Notice, Spinner, StatTile, StatusChip } from './ui';
 import { formatDateTime } from './format';
+import QrScanner from './QrScanner';
 
 interface Props {
   account: StaffAccount;
@@ -111,6 +112,15 @@ function AcceptCode({ onAccepted, onAuthError }: { onAccepted: (id: string) => v
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [scanned, setScanned] = useState(false);
+  const handleScanned = useCallback((value: string) => {
+    setCode(value);
+    setError('');
+    setScanning(false);
+    setScanned(true);
+  }, []);
+  const closeScanner = useCallback(() => setScanning(false), []);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -138,6 +148,7 @@ function AcceptCode({ onAccepted, onAuthError }: { onAccepted: (id: string) => v
           onChange={(e) => {
             setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, CODE_LEN));
             setError('');
+            setScanned(false);
           }}
           placeholder="XXXXXXXX"
           aria-label="Kode akses pasien"
@@ -148,6 +159,23 @@ function AcceptCode({ onAccepted, onAuthError }: { onAccepted: (id: string) => v
           {busy ? '…' : 'Terima'}
         </button>
       </div>
+      {scanning ? (
+        <QrScanner onResult={handleScanned} onClose={closeScanner} />
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            setScanning(true);
+            setScanned(false);
+          }}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-800 hover:underline"
+        >
+          <ScanLine className="h-4 w-4" /> Pindai QR dari layar pasien
+        </button>
+      )}
+      {scanned && code.length === CODE_LEN && (
+        <p role="status" className="text-xs font-medium text-teal-800">Kode terbaca. Periksa lalu tekan Terima.</p>
+      )}
       {error && <p role="alert" className="text-xs font-medium text-rose-700">{error}</p>}
       <p className="text-xs text-stone-500">Setelah diterima, jawaban pasien terkunci dan kode berakhir.</p>
     </form>

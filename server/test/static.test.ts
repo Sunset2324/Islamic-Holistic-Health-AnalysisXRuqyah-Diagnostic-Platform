@@ -96,6 +96,12 @@ describe('frontend disajikan dari proses API (hosting tanpa nginx)', () => {
       expect(res.headers['x-robots-tag']).toContain('noindex');
       expect(res.headers['cache-control']).toBe('no-store');
       expect(res.headers['content-security-policy']).toContain("frame-ancestors 'none'");
+      // Kamera hanya untuk pemindai QR di halaman staf, terbatas asal yang sama; mikrofon dll. tetap mati.
+      expect(res.headers['permissions-policy']).toBe('camera=(self), microphone=(), geolocation=(), payment=(), usb=()');
+    }
+    // Halaman pasien dan tebakan alamat staf tetap tanpa kamera.
+    for (const url of ['/', '/hasil', '/staf-0000000000000000']) {
+      expect((await get(url)).headers['permissions-policy'], url).toContain('camera=()');
     }
     for (const url of ['/staf-0000000000000000', `${real}x`, `${real}/lain`, '/staf-', '/admin', '/#/konsultan']) {
       const res = await get(url);

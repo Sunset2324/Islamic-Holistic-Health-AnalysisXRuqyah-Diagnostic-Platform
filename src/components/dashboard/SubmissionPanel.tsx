@@ -1,9 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CheckCircle2, Copy, KeyRound, Loader2, ShieldAlert, Trash2 } from 'lucide-react';
 import { ERROR_MESSAGES } from '@/lib/api';
+import { readReminder, writeReminder, type ReminderState } from '@/lib/consultCode';
 import { daysLeft } from '@/lib/savedSubmission';
 import type { SubmissionApi } from '@/lib/useSubmission';
+import CodeReminderBar from './CodeReminderBar';
+import CodeShare from './CodeShare';
 import TonguePhotos from './TonguePhotos';
+
+const CODE_BOX_ID = 'kode-konsultasi';
 
 const dateFormat = new Intl.DateTimeFormat('id-ID', { dateStyle: 'long' });
 
@@ -21,6 +26,21 @@ export default function SubmissionPanel({ submission, onSaveAsNew, onRetry, onDe
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const savedId = saved?.id ?? null;
+  const [reminder, setReminder] = useState<ReminderState>(() => (savedId ? readReminder(savedId) : 'open'));
+  useEffect(() => {
+    if (savedId) setReminder(readReminder(savedId));
+  }, [savedId]);
+
+  function closeReminder(state: Exclude<ReminderState, 'open'>) {
+    if (savedId) writeReminder(savedId, state);
+    setReminder(state);
+  }
+
+  async function createCodeFromBar() {
+    await requestCode();
+    document.getElementById(CODE_BOX_ID)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 
   async function handleCopy() {
     if (!code) return;
@@ -100,7 +120,7 @@ export default function SubmissionPanel({ submission, onSaveAsNew, onRetry, onDe
             bersama jawaban Anda. Membuat kode baru mencabut kode sebelumnya.
           </p>
           {code ? (
-            <div className="space-y-2 rounded-2xl bg-lavender-50 p-4 ring-1 ring-lavender-200">
+            <div id={CODE_BOX_ID} className="space-y-3 rounded-2xl bg-lavender-50 p-4 ring-1 ring-lavender-200">
               <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">Kode konsultasi Anda</p>
               <p className="font-mono text-3xl font-bold tracking-[0.3em] text-stone-900" data-testid="access-code">
                 {code.code}
@@ -113,6 +133,7 @@ export default function SubmissionPanel({ submission, onSaveAsNew, onRetry, onDe
                   Buat kode baru
                 </button>
               </div>
+              <CodeShare code={code.code} onSent={() => closeReminder('sent')} />
               <p className="text-xs text-stone-500">Catat kode ini; demi keamanan kode tidak ditampilkan lagi setelah halaman dimuat ulang.</p>
             </div>
           ) : (
@@ -155,6 +176,16 @@ export default function SubmissionPanel({ submission, onSaveAsNew, onRetry, onDe
             </button>
           )}
         </div>
+      )}
+
+      {status.kind === 'saved' && saved && reminder === 'open' && (
+        <CodeReminderBar
+          code={code?.code ?? null}
+          busy={codeBusy}
+          onCreateCode={() => void createCodeFromBar()}
+          onSent={() => closeReminder('sent')}
+          onSkip={() => closeReminder('skipped')}
+        />
       )}
     </section>
   );
