@@ -40,6 +40,15 @@ export const FRONTEND_SECURITY_HEADERS: Readonly<Record<string, string>> = {
     "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
 };
 
+/**
+ * Halaman staf saja yang boleh memakai kamera (pemindai QR kode konsultasi, hanya untuk asal yang sama).
+ * Halaman pasien tetap camera=() sehingga skrip apa pun di sana tidak bisa meminta kamera.
+ */
+export const STAFF_PAGE_HEADERS: Readonly<Record<string, string>> = {
+  ...FRONTEND_SECURITY_HEADERS,
+  'Permissions-Policy': 'camera=(self), microphone=(), geolocation=(), payment=(), usb=()',
+};
+
 interface StaticFile {
   body: Buffer;
   type: string;
@@ -66,8 +75,8 @@ export async function registerStatic(app: FastifyInstance, distDir: string, staf
   const index = files.get('/index.html');
   if (!index) throw new Error(`index.html tidak ditemukan di ${distDir}. Jalankan build frontend dulu.`);
 
-  const send = (reply: FastifyReply, file: StaticFile, cache: string) => {
-    reply.headers(FRONTEND_SECURITY_HEADERS);
+  const send = (reply: FastifyReply, file: StaticFile, cache: string, headers = FRONTEND_SECURITY_HEADERS) => {
+    reply.headers(headers);
     reply.header('Cache-Control', cache);
     reply.type(file.type);
     return reply.send(file.body);
@@ -88,7 +97,7 @@ export async function registerStatic(app: FastifyInstance, distDir: string, staf
           return reply.code(404).headers(FRONTEND_SECURITY_HEADERS).type('text/plain; charset=utf-8').send('Not found');
         }
         reply.header('X-Robots-Tag', 'noindex, nofollow, noarchive');
-        return send(reply, index, 'no-store');
+        return send(reply, index, 'no-store', STAFF_PAGE_HEADERS);
       }
       const file = files.get(pathname);
       if (file && pathname !== '/index.html') {
