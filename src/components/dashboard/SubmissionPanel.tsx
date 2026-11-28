@@ -142,8 +142,6 @@ export default function SubmissionPanel({ submission, onSaveAsNew, onRetry, onDe
         )}
       </div>
 
-      {status.kind === 'saved' && saved && <TonguePhotos submissionId={saved.id} editToken={saved.editToken} />}
-
       {status.kind === 'saved' && saved && (
         <div
           id={CONSULT_ID}
@@ -199,6 +197,9 @@ export default function SubmissionPanel({ submission, onSaveAsNew, onRetry, onDe
           )}
         </div>
       )}
+
+      {/* Foto lidah setelah bagian kode, agar kode tetap di layar pertama. */}
+      {status.kind === 'saved' && saved && <TonguePhotos submissionId={saved.id} editToken={saved.editToken} />}
 
       {saved && status.kind !== 'saving' && (
         <div className="border-t border-lavender-100 pt-4">

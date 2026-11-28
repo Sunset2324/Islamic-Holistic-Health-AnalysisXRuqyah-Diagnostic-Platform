@@ -84,11 +84,12 @@ export default function ResultDashboard({
           </p>
         </div>
 
+        {/* Kode konsultasi tepat di bawah sapaan agar terlihat di layar pertama (blueprint bagian 11). */}
+        {submissionPanel}
+
         <div className="animate-fade-up" style={{ animationDelay: '60ms' }}>
           <ConsultationAdviceCard assessment={assessment} concerning={concerning} />
         </div>
-
-        {submissionPanel}
 
         {assessment.complete && assessment.hhs100Display !== null && assessment.category !== null ? (
           <div className="animate-fade-up grid gap-6 lg:grid-cols-2" style={{ animationDelay: '100ms' }}>
