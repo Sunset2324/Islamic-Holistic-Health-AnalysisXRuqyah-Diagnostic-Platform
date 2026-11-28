@@ -17,6 +17,31 @@ const MIGRATIONS = [
      data_enc MEDIUMBLOB NOT NULL,
      CONSTRAINT fk_blob_image FOREIGN KEY (storage_key) REFERENCES images(storage_key) ON DELETE CASCADE
    ) ENGINE=InnoDB`,
+
+  // Laporan akhir (blueprint bagian 12, 28 November 2026): potensi ruqyah A-D dan 4 pilar boleh dicentang lebih dari
+  // satu; catatan kondisi psikis dan fisik (terenkripsi, AAD per baris+kolom) masing-masing dengan centang "sertakan".
+  `ALTER TABLE consultations
+     ADD COLUMN IF NOT EXISTS ruqyah_conditions SET('A','B','C','D') NULL,
+     ADD COLUMN IF NOT EXISTS pillar_potentials SET('PL','PM','PP','FX') NULL,
+     ADD COLUMN IF NOT EXISTS psychological_notes_enc LONGBLOB NULL,
+     ADD COLUMN IF NOT EXISTS physical_notes_enc LONGBLOB NULL,
+     ADD COLUMN IF NOT EXISTS share_pillars_with_patient BOOLEAN NOT NULL DEFAULT FALSE,
+     ADD COLUMN IF NOT EXISTS share_psychological_with_patient BOOLEAN NOT NULL DEFAULT FALSE,
+     ADD COLUMN IF NOT EXISTS share_physical_with_patient BOOLEAN NOT NULL DEFAULT FALSE`,
+  // Data lama: kondisi tunggal dipindah ke kolom pilihan baru (hanya bila belum pernah dipindah).
+  `UPDATE consultations SET ruqyah_conditions = ruqyah_final_condition
+    WHERE ruqyah_conditions IS NULL AND ruqyah_final_condition IS NOT NULL`,
+  // CHECK lama mewajibkan tepat satu kondisi ruqyah untuk final; kini ruqyah boleh kosong bila ada pilar.
+  // Penggantinya tetap menjaga catatan penilaian, saran, dan waktu final. Aturan "minimal satu potensi" dan
+  // "catatan psikis & fisik wajib" dijaga di server (laporan final lama belum punya kolom itu).
+  'ALTER TABLE consultations DROP CONSTRAINT IF EXISTS chk_final_requires_fields',
+  `ALTER TABLE consultations ADD CONSTRAINT IF NOT EXISTS chk_final_requires_fields_v2 CHECK (
+     status = 'draft' OR (
+       ruqyah_assessment_notes_enc IS NOT NULL AND OCTET_LENGTH(ruqyah_assessment_notes_enc) > 0
+       AND consultant_advice_enc IS NOT NULL AND OCTET_LENGTH(consultant_advice_enc) > 0
+       AND finalized_at IS NOT NULL
+     )
+   )`,
 ];
 
 export async function ensureSchema(db: Db): Promise<void> {

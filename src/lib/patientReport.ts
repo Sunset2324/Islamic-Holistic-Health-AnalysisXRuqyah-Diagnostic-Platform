@@ -1,11 +1,13 @@
 import { EMERGENCY_NUMBER } from '@/config';
-import { RUQYAH_CONDITIONS, type RuqyahConditionId } from '@/data/conditions';
+import { RUQYAH_CONDITIONS } from '@/data/conditions';
+import { PILLARS } from '@/data/pillars';
 import type { Report } from '@/lib/staffApi';
 import type { PatientIntake } from '@/types/intake';
 
 /**
- * Laporan untuk pasien = HANYA isi laporan konsultasi: saran konsultan, penilaian ruqyah (bila dicentang),
- * catatan klinis (bila dicentang). Satu sumber untuk pratinjau, PDF, dan teks WhatsApp.
+ * Laporan untuk pasien = HANYA isi laporan konsultasi: saran konsultan, lalu bagian yang dicentang "sertakan":
+ * penilaian potensi (ruqyah dan/atau pilar), kondisi psikis, kondisi fisik, catatan klinis.
+ * Satu sumber untuk pratinjau, PDF, dan teks WhatsApp.
  * Tidak memuat alamat/tautan halaman staf, ajuan sistem, maupun hasil hitungan.
  */
 export interface PatientReportSection {
@@ -28,12 +30,25 @@ const dateFormat = new Intl.DateTimeFormat('id-ID', { dateStyle: 'long' });
 
 export function buildPatientReport(intake: PatientIntake, report: Report, consultantName: string, date: Date): PatientReportData {
   const sections: PatientReportSection[] = [{ title: 'Saran dari konsultan', body: report.advice.trim() }];
-  const condition = report.ruqyahFinalCondition as RuqyahConditionId | null;
-  if (report.shareRuqyah && condition) {
-    sections.push({ title: 'Penilaian ruqyah', lead: RUQYAH_CONDITIONS[condition].name, body: report.ruqyahNotes.trim() });
+
+  // Penilaian potensi: hanya kelompok yang dicentang "sertakan"; catatan penilaian ikut bila ada yang tampil.
+  const leads: string[] = [];
+  if (report.shareRuqyah && report.ruqyahConditions.length > 0) {
+    leads.push(`Potensi ruqyah: ${report.ruqyahConditions.map((c) => RUQYAH_CONDITIONS[c].name).join(', ')}`);
   }
-  if (report.shareClinicalNotes && report.clinicalNotes.trim()) {
-    sections.push({ title: 'Catatan klinis', body: report.clinicalNotes.trim() });
+  if (report.sharePillars && report.pillars.length > 0) {
+    const labels = PILLARS.filter((p) => report.pillars.includes(p.code)).map((p) => p.label);
+    leads.push(`Pilar: ${labels.join(', ')}`);
+  }
+  if (leads.length > 0) sections.push({ title: 'Penilaian potensi', lead: leads.join(' · '), body: report.ruqyahNotes.trim() });
+
+  const optional: [boolean, string, string][] = [
+    [report.sharePsychological, 'Kondisi psikis', report.psychologicalNotes],
+    [report.sharePhysical, 'Kondisi fisik', report.physicalNotes],
+    [report.shareClinicalNotes, 'Catatan klinis', report.clinicalNotes],
+  ];
+  for (const [share, title, text] of optional) {
+    if (share && text.trim()) sections.push({ title, body: text.trim() });
   }
   return {
     patientName: intake.name.trim() || 'Pasien',

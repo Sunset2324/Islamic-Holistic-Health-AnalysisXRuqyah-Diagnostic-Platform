@@ -39,6 +39,21 @@ run('akun staf: konsultan & admin (MariaDB sungguhan)', () => {
   const req = (method: 'GET' | 'POST' | 'PUT', path: string, cookie?: string, payload?: object, headers: Record<string, string> = {}) =>
     app.inject({ method, url: path, payload, remoteAddress: nextIp(), headers: { ...gate(), ...(cookie ? { cookie } : {}), ...headers } });
   const tokenOf = (invitePath: string) => invitePath.split('#undangan=')[1]!;
+  const fullReport = (patch: Record<string, unknown> = {}) => ({
+    ruqyahConditions: [] as string[],
+    pillars: ['PM', 'PP'],
+    ruqyahNotes: 'Catatan penilaian',
+    advice: 'Saran',
+    clinicalNotes: '',
+    psychologicalNotes: 'Psikis-rahasia',
+    physicalNotes: 'Fisik-rahasia',
+    shareRuqyah: false,
+    sharePillars: true,
+    shareClinicalNotes: false,
+    sharePsychological: true,
+    sharePhysical: false,
+    ...patch,
+  });
 
   async function newAdmin() {
     const id = randomUUID();
@@ -131,16 +146,25 @@ run('akun staf: konsultan & admin (MariaDB sungguhan)', () => {
     expect(detail.readOnly).toBe(false);
 
     expect((await req('POST', `/api/staff/consultations/${consultationId}/finalize`, c.cookie)).statusCode).toBe(422);
-    const report = { ruqyahFinalCondition: 'B', ruqyahNotes: 'Catatan-ruqyah-rahasia', advice: 'Saran-rahasia', clinicalNotes: '', shareRuqyah: true, shareClinicalNotes: false };
+    const report = fullReport({ ruqyahConditions: ['B'], ruqyahNotes: 'Catatan-ruqyah-rahasia', advice: 'Saran-rahasia', shareRuqyah: true });
+    // Belum lengkap -> 422: tanpa potensi sama sekali, atau tanpa catatan psikis/fisik.
+    for (const partial of [{ ruqyahConditions: [], pillars: [] }, { psychologicalNotes: '' }, { physicalNotes: '  ' }]) {
+      expect((await req('PUT', `/api/staff/consultations/${consultationId}`, c.cookie, { ...report, ...partial })).statusCode).toBe(204);
+      expect((await req('POST', `/api/staff/consultations/${consultationId}/finalize`, c.cookie)).statusCode).toBe(422);
+    }
     expect((await req('PUT', `/api/staff/consultations/${consultationId}`, c.cookie, report)).statusCode).toBe(204);
+    const saved = (await req('GET', `/api/staff/consultations/${consultationId}`, c.cookie)).json().report;
+    expect(saved).toEqual(report);
     expect((await req('POST', `/api/staff/consultations/${consultationId}/finalize`, c.cookie)).statusCode).toBe(204);
     expect((await req('PUT', `/api/staff/consultations/${consultationId}`, c.cookie, report)).statusCode).toBe(404);
 
     const [row] = await q('SELECT * FROM consultations WHERE id = ?', [consultationId]);
     expect(row!.status).toBe('final');
     expect(row!.is_current).toBe(1);
-    for (const col of ['snapshot_intake_enc', 'consultant_advice_enc', 'ruqyah_assessment_notes_enc']) {
-      for (const secret of ['Rahasia Nama Pasien', 'Keluhan-pribadi-unik-12345', 'Saran-rahasia', 'Catatan-ruqyah-rahasia']) {
+    expect(row!.ruqyah_conditions).toBe('B');
+    expect(row!.pillar_potentials).toBe('PM,PP');
+    for (const col of ['snapshot_intake_enc', 'consultant_advice_enc', 'ruqyah_assessment_notes_enc', 'psychological_notes_enc', 'physical_notes_enc']) {
+      for (const secret of ['Rahasia Nama Pasien', 'Keluhan-pribadi-unik-12345', 'Saran-rahasia', 'Catatan-ruqyah-rahasia', 'Psikis-rahasia', 'Fisik-rahasia']) {
         expect((row![col] as Buffer).includes(Buffer.from(secret))).toBe(false);
       }
     }
@@ -160,12 +184,53 @@ run('akun staf: konsultan & admin (MariaDB sungguhan)', () => {
     const asAdmin = await req('GET', `/api/staff/consultations/${consultationId}`, admin.cookie);
     expect(asAdmin.statusCode).toBe(200);
     expect(asAdmin.json().readOnly).toBe(true);
-    const report = { ruqyahFinalCondition: null, ruqyahNotes: '', advice: 'x', clinicalNotes: '', shareRuqyah: false, shareClinicalNotes: false };
-    expect((await req('PUT', `/api/staff/consultations/${consultationId}`, admin.cookie, report)).statusCode).toBe(403);
+    expect((await req('PUT', `/api/staff/consultations/${consultationId}`, admin.cookie, fullReport())).statusCode).toBe(403);
 
     const audit = (await req('GET', '/api/admin/audit', admin.cookie)).json().entries as { action: string; entityId: string; actor: { email: string } | null; detail: unknown }[];
     expect(audit.some((e) => e.action === 'view' && e.entityId === consultationId && e.actor?.email === admin.email)).toBe(true);
     expect(JSON.stringify(audit)).not.toContain('Rahasia Nama Pasien');
+  });
+
+  it('laporan: pilihan potensi divalidasi (tanpa duplikat/kode asing/kolom lama), disimpan urut', async () => {
+    const admin = await newAdmin();
+    const c = await newConsultant(admin.cookie);
+    const { consultationId } = (await req('POST', '/api/staff/access-code', c.cookie, { code: (await patientCode()).code })).json();
+    const put = (body: object) => req('PUT', `/api/staff/consultations/${consultationId}`, c.cookie, body);
+    for (const bad of [
+      fullReport({ ruqyahConditions: ['A', 'A'] }),
+      fullReport({ ruqyahConditions: ['E'] }),
+      fullReport({ pillars: ['PL', 'XX'] }),
+      fullReport({ ruqyahFinalCondition: 'B' }),
+      { ...fullReport(), psychologicalNotes: undefined },
+      fullReport({ physicalNotes: 'x'.repeat(4001) }),
+    ]) {
+      expect((await put(bad)).statusCode, JSON.stringify(bad).slice(0, 80)).toBe(400);
+    }
+    // Urutan masukan bebas; tersimpan & terbaca urut daftar. Semua 8 potensi boleh dicentang.
+    expect((await put(fullReport({ ruqyahConditions: ['D', 'A', 'C', 'B'], pillars: ['FX', 'PL', 'PP', 'PM'] }))).statusCode).toBe(204);
+    const r = (await req('GET', `/api/staff/consultations/${consultationId}`, c.cookie)).json().report;
+    expect(r.ruqyahConditions).toEqual(['A', 'B', 'C', 'D']);
+    expect(r.pillars).toEqual(['PL', 'PM', 'PP', 'FX']);
+    // Hanya ruqyah (tanpa pilar) juga sah untuk final.
+    expect((await put(fullReport({ ruqyahConditions: ['A'], pillars: [] }))).statusCode).toBe(204);
+    expect((await req('POST', `/api/staff/consultations/${consultationId}/finalize`, c.cookie)).statusCode).toBe(204);
+  });
+
+  it('migrasi: kondisi lama dipindah ke kolom baru; CHECK lama diganti, tetap menjaga laporan final', async () => {
+    const admin = await newAdmin();
+    const c = await newConsultant(admin.cookie);
+    const { consultationId } = (await req('POST', '/api/staff/access-code', c.cookie, { code: (await patientCode()).code })).json();
+    await db.query("UPDATE consultations SET ruqyah_conditions = NULL, ruqyah_final_condition = 'C' WHERE id = ?", [consultationId]);
+    await ensureSchema(db);
+    const [row] = await q('SELECT ruqyah_conditions FROM consultations WHERE id = ?', [consultationId]);
+    expect(row!.ruqyah_conditions).toBe('C');
+    const names = (await q(
+      "SELECT CONSTRAINT_NAME AS n FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'consultations' AND CONSTRAINT_TYPE = 'CHECK'",
+    )).map((x) => x.n);
+    expect(names).not.toContain('chk_final_requires_fields');
+    expect(names).toContain('chk_final_requires_fields_v2');
+    // Pengaman DB: laporan final tanpa saran tetap ditolak database walau lolos dari aplikasi.
+    await expect(db.query("UPDATE consultations SET status = 'final', finalized_at = NOW(6), consultant_advice_enc = NULL WHERE id = ?", [consultationId])).rejects.toThrow();
   });
 
   it('kode akses salah 5x -> konsultan terkunci sementara', async () => {
