@@ -64,7 +64,7 @@ Satu proses Node menyajikan frontend (`dist/`) **dan** `/api`, dengan header kea
 Variabel environment (isi sendiri di hPanel, jangan dikirim ke siapa pun): `DATABASE_URL`, `HMAC_PEPPER`,
 `DATA_KEY_V1`, `DATA_KEY_CURRENT`, `PORT`, `TRUST_PROXY`.
 - `VITE_CLINIC_WHATSAPP` (opsional, bukan rahasia): nomor WhatsApp klinik untuk tombol kirim kode konsultasi. Dibaca saat
-  build, jadi isi sebelum `build:hostinger`; kosong = tombol WhatsApp disembunyikan (QR dan pita pengingat tetap ada).
+  build, jadi isi sebelum `build:hostinger`; kosong = WhatsApp tetap terbuka dan pasien memilih sendiri kontak konsultannya.
 - Halaman staf saja yang diizinkan memakai kamera (`Permissions-Policy: camera=(self)`) untuk pemindai QR; halaman pasien
   tetap `camera=()`. Konfigurasi nginx di `deploy/nginx/` (jalur VPS) belum diubah untuk ini.
 - `DATABASE_URL=mysql://USER:PASSWORD@127.0.0.1:3306/NAMA_DB` (password di-URL-encode bila ada karakter khusus).

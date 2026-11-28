@@ -5,6 +5,7 @@ import {
   CODE_PATTERN,
   codeQrDataUrl,
   normalizeWhatsAppNumber,
+  openWhatsAppWithCode,
   parseScannedCode,
   readReminder,
   whatsAppLink,
@@ -47,10 +48,12 @@ describe('tautan WhatsApp', () => {
     expect(text).toContain(CODE);
     expect(text).toBe(whatsAppMessage(CODE));
   });
-  it('tanpa nomor atau dengan kode tidak sah -> null (tombol disembunyikan)', () => {
-    expect(whatsAppLink(null, CODE)).toBeNull();
+  it('tanpa nomor klinik: WhatsApp terbuka untuk memilih kontak, tetap berisi kode saja', () => {
+    expect(whatsAppLink(null, CODE)).toBe(`https://wa.me/?text=${encodeURIComponent(whatsAppMessage(CODE))}`);
+  });
+  it('kode tidak sah -> null', () => {
     expect(whatsAppLink('6281234567890', 'ABC')).toBeNull();
-    expect(whatsAppLink('6281234567890', 'ABCD2345&text=lain')).toBeNull();
+    expect(whatsAppLink(null, 'ABCD2345&text=lain')).toBeNull();
   });
 });
 
@@ -131,5 +134,47 @@ describe('pita pengingat tersimpan per data', () => {
     stubStorage(true);
     expect(() => writeReminder('a', 'sent')).not.toThrow();
     expect(readReminder('a')).toBe('open');
+  });
+});
+
+describe('kirim via WhatsApp satu ketukan', () => {
+  function stubOpen(blocked = false) {
+    const order: string[] = [];
+    const win = { opener: {} as unknown, closed: false, location: { replace: vi.fn() }, close: vi.fn() };
+    const open = vi.fn(() => {
+      order.push('open');
+      return blocked ? null : win;
+    });
+    vi.stubGlobal('window', { open });
+    return { win, open, order };
+  }
+
+  it('tab dibuka SEBELUM menunggu server (anti pop-up blocker), lalu diarahkan ke wa.me berisi kode', async () => {
+    const { win, open, order } = stubOpen();
+    const result = await openWhatsAppWithCode(async () => {
+      order.push('getCode');
+      return CODE;
+    }, '6281234567890');
+    expect(order).toEqual(['open', 'getCode']);
+    expect(open).toHaveBeenCalledWith('about:blank', '_blank');
+    expect(win.opener).toBeNull();
+    expect(win.location.replace).toHaveBeenCalledWith(whatsAppLink('6281234567890', CODE));
+    expect(result).toBe('opened');
+  });
+
+  it('kode gagal dibuat (null atau galat): tab kosong ditutup, tidak ada WhatsApp', async () => {
+    for (const getCode of [async () => null, async () => Promise.reject(new Error('server'))]) {
+      const { win } = stubOpen();
+      expect(await openWhatsAppWithCode(getCode, null)).toBe('failed');
+      expect(win.close).toHaveBeenCalled();
+      expect(win.location.replace).not.toHaveBeenCalled();
+    }
+  });
+
+  it('browser memblokir tab baru: kode tetap dibuat, hasil "blocked"', async () => {
+    stubOpen(true);
+    const getCode = vi.fn(async () => CODE);
+    expect(await openWhatsAppWithCode(getCode, null)).toBe('blocked');
+    expect(getCode).toHaveBeenCalledOnce();
   });
 });

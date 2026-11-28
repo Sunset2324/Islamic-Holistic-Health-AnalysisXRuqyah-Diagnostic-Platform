@@ -8,6 +8,9 @@ interface CodeReminderBarProps {
   code: string | null;
   busy: boolean;
   onCreateCode: () => void;
+  /** Satu ketukan: buat kode (bila belum ada) lalu buka WhatsApp. */
+  onSendWhatsApp: () => void;
+  waBusy: boolean;
   /** Gulir ke kotak kode dan fokus ke tombol salin. */
   onShowCode: () => void;
   onSent: () => void;
@@ -18,7 +21,7 @@ interface CodeReminderBarProps {
  * Pita pengingat di bawah layar (blueprint bagian 11, usulan 7). Tetap tampil sampai pasien menyatakan sudah
  * mengirim/menunjukkan kode atau tidak perlu konsultasi. Tidak mengirim apa pun sendiri.
  */
-export default function CodeReminderBar({ code, busy, onCreateCode, onShowCode, onSent, onSkip }: CodeReminderBarProps) {
+export default function CodeReminderBar({ code, busy, onCreateCode, onSendWhatsApp, waBusy, onShowCode, onSent, onSkip }: CodeReminderBarProps) {
   const link = code ? whatsAppLink(CLINIC_WHATSAPP, code) : null;
   const ref = useRef<HTMLDivElement>(null);
 
@@ -50,14 +53,24 @@ export default function CodeReminderBar({ code, busy, onCreateCode, onShowCode, 
       <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-x-4 gap-y-2">
         <p className="flex min-w-0 flex-1 basis-60 items-start gap-2 text-sm font-semibold leading-[1.4] text-white">
           <BellRing className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" aria-hidden />
-          {code ? 'Langkah terakhir: kirim atau tunjukkan kode Anda ke konsultan.' : 'Ingin berkonsultasi? Langkah terakhir: buat kode konsultasi.'}
+          {code ? 'Langkah terakhir: kirim atau tunjukkan kode Anda ke konsultan.' : 'Ingin berkonsultasi? Langkah terakhir: kirim kode lewat WhatsApp atau buat kode.'}
         </p>
         <div className="flex flex-wrap items-center gap-2">
           {!code && (
             <button
               type="button"
+              onClick={onSendWhatsApp}
+              disabled={busy || waBusy}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#25d366] px-4 py-2.5 text-sm font-bold text-stone-950 hover:bg-[#3ee07a] disabled:opacity-70"
+            >
+              {waBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />} Kirim via WhatsApp
+            </button>
+          )}
+          {!code && (
+            <button
+              type="button"
               onClick={onCreateCode}
-              disabled={busy}
+              disabled={busy || waBusy}
               className="inline-flex items-center gap-2 rounded-lg bg-amber-400 px-4 py-2.5 text-sm font-bold text-stone-950 hover:bg-amber-300 disabled:opacity-70"
             >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Buat kode

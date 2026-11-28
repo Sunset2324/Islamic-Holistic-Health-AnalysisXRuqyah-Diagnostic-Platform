@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CheckCircle2, Copy, KeyRound, Loader2, ShieldAlert, Trash2 } from 'lucide-react';
+import { CheckCircle2, Copy, KeyRound, Loader2, MessageCircle, ShieldAlert, Trash2 } from 'lucide-react';
 import { ERROR_MESSAGES } from '@/lib/api';
-import { readReminder, writeReminder, type ReminderState } from '@/lib/consultCode';
+import { CLINIC_WHATSAPP, openWhatsAppWithCode, readReminder, writeReminder, type ReminderState } from '@/lib/consultCode';
 import { daysLeft } from '@/lib/savedSubmission';
 import type { SubmissionApi } from '@/lib/useSubmission';
 import CodeReminderBar from './CodeReminderBar';
@@ -71,6 +71,21 @@ export default function SubmissionPanel({ submission, onSaveAsNew, onRetry, onDe
   async function createCodeFromBar() {
     await requestCode();
     setPendingJump(true);
+  }
+
+  /** Kirim via WhatsApp satu ketukan: pakai kode yang sedang tampil, atau buat kode baru dulu. */
+  const [waBlocked, setWaBlocked] = useState(false);
+  const [waBusy, setWaBusy] = useState(false);
+  async function sendViaWhatsApp() {
+    if (waBusy) return;
+    setWaBusy(true);
+    setWaBlocked(false);
+    const existing = code?.code ?? null;
+    const result = await openWhatsAppWithCode(async () => existing ?? (await requestCode()));
+    setWaBusy(false);
+    if (result === 'opened') closeReminder('sent');
+    if (result === 'blocked') setWaBlocked(true);
+    if (result !== 'failed') setPendingJump(true);
   }
 
   async function handleCopy() {
@@ -179,16 +194,39 @@ export default function SubmissionPanel({ submission, onSaveAsNew, onRetry, onDe
               <p className="text-xs text-stone-600">Catat kode ini; demi keamanan kode tidak ditampilkan lagi setelah halaman dimuat ulang.</p>
             </div>
           ) : (
-            <button
-              ref={createRef}
-              type="button"
-              onClick={requestCode}
-              disabled={codeBusy}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-6 py-3.5 text-base font-bold text-stone-950 shadow hover:bg-amber-300 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:opacity-70 sm:w-auto"
-            >
-              {codeBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : <KeyRound className="h-5 w-5" />}
-              Buat kode konsultasi
-            </button>
+            <div className="space-y-3">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => void sendViaWhatsApp()}
+                  disabled={codeBusy || waBusy}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25d366] px-6 py-3.5 text-base font-bold text-stone-950 shadow hover:bg-[#3ee07a] focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:opacity-70 sm:w-auto"
+                >
+                  {waBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : <MessageCircle className="h-5 w-5" />}
+                  Kirim kode via WhatsApp
+                </button>
+                <button
+                  ref={createRef}
+                  type="button"
+                  onClick={requestCode}
+                  disabled={codeBusy || waBusy}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-6 py-3.5 text-base font-bold text-stone-950 shadow hover:bg-amber-300 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:opacity-70 sm:w-auto"
+                >
+                  {codeBusy && !waBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : <KeyRound className="h-5 w-5" />}
+                  Buat kode saja
+                </button>
+              </div>
+              <p className="text-xs leading-[1.5] text-mint-50">
+                {CLINIC_WHATSAPP
+                  ? 'WhatsApp langsung terbuka ke nomor klinik, berisi kode saja (tanpa nama atau keluhan). Tinggal tekan kirim.'
+                  : 'WhatsApp langsung terbuka berisi kode saja (tanpa nama atau keluhan). Pilih kontak konsultan Anda, lalu tekan kirim.'}
+              </p>
+            </div>
+          )}
+          {waBlocked && (
+            <p role="status" className="rounded-xl bg-amber-50 p-3 text-sm text-stone-900">
+              Browser tidak mengizinkan membuka WhatsApp otomatis. Kode sudah dibuat: tekan tombol hijau &quot;Kirim kode&quot; di kotak kode.
+            </p>
           )}
           {codeError && (
             <p role="alert" className="flex items-start gap-2 rounded-xl bg-rose-50 p-3 text-sm text-rose-900">
@@ -229,6 +267,8 @@ export default function SubmissionPanel({ submission, onSaveAsNew, onRetry, onDe
           code={code?.code ?? null}
           busy={codeBusy}
           onCreateCode={() => void createCodeFromBar()}
+          onSendWhatsApp={() => void sendViaWhatsApp()}
+          waBusy={waBusy}
           onShowCode={jumpToCode}
           onSent={() => closeReminder('sent')}
           onSkip={() => closeReminder('skipped')}
