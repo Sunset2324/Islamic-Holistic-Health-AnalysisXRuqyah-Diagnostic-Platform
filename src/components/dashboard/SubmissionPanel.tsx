@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CheckCircle2, Copy, KeyRound, Loader2, ShieldAlert, Trash2 } from 'lucide-react';
 import { ERROR_MESSAGES } from '@/lib/api';
 import { readReminder, writeReminder, type ReminderState } from '@/lib/consultCode';
@@ -9,6 +9,8 @@ import CodeShare from './CodeShare';
 import TonguePhotos from './TonguePhotos';
 
 const CODE_BOX_ID = 'kode-konsultasi';
+const CONSULT_ID = 'ajukan-konsultasi';
+const HIGHLIGHT_MS = 2400;
 
 const dateFormat = new Intl.DateTimeFormat('id-ID', { dateStyle: 'long' });
 
@@ -37,9 +39,38 @@ export default function SubmissionPanel({ submission, onSaveAsNew, onRetry, onDe
     setReminder(state);
   }
 
+  const copyRef = useRef<HTMLButtonElement>(null);
+  const createRef = useRef<HTMLButtonElement>(null);
+  const [highlight, setHighlight] = useState(false);
+  const [pendingJump, setPendingJump] = useState(false);
+
+  /** Bawa pasien langsung ke bagian kode: gulir, sorot sebentar, fokus ke tombol salin (atau buat kode). */
+  const hasCode = Boolean(code);
+  const jumpToCode = useCallback(() => {
+    const target = document.getElementById(hasCode ? CODE_BOX_ID : CONSULT_ID) ?? document.getElementById(CONSULT_ID);
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    target?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+    (hasCode ? copyRef.current : createRef.current)?.focus({ preventScroll: true });
+    setHighlight(true);
+  }, [hasCode]);
+
+  useEffect(() => {
+    if (!highlight) return;
+    const t = window.setTimeout(() => setHighlight(false), HIGHLIGHT_MS);
+    return () => window.clearTimeout(t);
+  }, [highlight]);
+
+  // Kode baru tampil setelah render berikutnya; gulir setelah kotaknya benar-benar ada.
+  useEffect(() => {
+    if (pendingJump && hasCode) {
+      setPendingJump(false);
+      jumpToCode();
+    }
+  }, [pendingJump, hasCode, jumpToCode]);
+
   async function createCodeFromBar() {
     await requestCode();
-    document.getElementById(CODE_BOX_ID)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setPendingJump(true);
   }
 
   async function handleCopy() {
@@ -111,49 +142,64 @@ export default function SubmissionPanel({ submission, onSaveAsNew, onRetry, onDe
         )}
       </div>
 
-      {status.kind === 'saved' && saved && <TonguePhotos submissionId={saved.id} editToken={saved.editToken} />}
-
       {status.kind === 'saved' && saved && (
-        <div className="space-y-3 border-t border-lavender-100 pt-4">
-          <p className="text-sm leading-[1.5] text-stone-700">
-            Siap berkonsultasi? Buat kode lalu tunjukkan ke konsultan saat Anda datang. Kode hanya berlaku sekali dan berakhir
+        <div
+          id={CONSULT_ID}
+          className={`scroll-mt-24 space-y-4 rounded-3xl bg-mint-900 p-5 text-white shadow-lg ring-4 transition-shadow duration-300 sm:p-6 ${
+            highlight ? 'ring-amber-400' : 'ring-transparent'
+          }`}
+        >
+          <h2 className="flex items-center gap-2 text-lg font-bold">
+            <KeyRound className="h-5 w-5 text-amber-300" aria-hidden /> Kode konsultasi
+          </h2>
+          <p className="text-sm leading-[1.5] text-mint-50">
+            Siap berkonsultasi? Buat kode lalu kirim atau tunjukkan ke konsultan. Kode hanya berlaku sekali dan berakhir
             bersama jawaban Anda. Membuat kode baru mencabut kode sebelumnya.
           </p>
           {code ? (
-            <div id={CODE_BOX_ID} className="space-y-3 rounded-2xl bg-lavender-50 p-4 ring-1 ring-lavender-200">
-              <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">Kode konsultasi Anda</p>
-              <p className="font-mono text-3xl font-bold tracking-[0.3em] text-stone-900" data-testid="access-code">
+            <div id={CODE_BOX_ID} className="space-y-4 rounded-2xl bg-white p-4 text-stone-900">
+              <p className="text-xs font-semibold uppercase tracking-wider text-stone-600">Kode konsultasi Anda</p>
+              <p className="font-mono text-3xl font-bold tracking-[0.3em] text-stone-950" data-testid="access-code">
                 {code.code}
               </p>
               <div className="flex flex-wrap items-center gap-3">
-                <button type="button" onClick={handleCopy} className="inline-flex items-center gap-2 rounded-lg border border-stone-300 px-3 py-2 text-xs font-semibold hover:bg-white">
-                  <Copy className="h-3.5 w-3.5" /> {copied ? 'Tersalin' : 'Salin kode'}
+                <button
+                  ref={copyRef}
+                  type="button"
+                  onClick={handleCopy}
+                  className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-5 py-3 text-base font-bold text-stone-950 shadow hover:bg-amber-300 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-mint-700"
+                >
+                  <Copy className="h-5 w-5" /> {copied ? 'Tersalin' : 'Salin kode'}
                 </button>
-                <button type="button" onClick={requestCode} disabled={codeBusy} className="text-xs font-medium text-mint-800 underline-offset-2 hover:underline disabled:opacity-60">
+                <button type="button" onClick={requestCode} disabled={codeBusy} className="text-sm font-medium text-mint-800 underline underline-offset-2 disabled:opacity-60">
                   Buat kode baru
                 </button>
               </div>
               <CodeShare code={code.code} onSent={() => closeReminder('sent')} />
-              <p className="text-xs text-stone-500">Catat kode ini; demi keamanan kode tidak ditampilkan lagi setelah halaman dimuat ulang.</p>
+              <p className="text-xs text-stone-600">Catat kode ini; demi keamanan kode tidak ditampilkan lagi setelah halaman dimuat ulang.</p>
             </div>
           ) : (
             <button
+              ref={createRef}
               type="button"
               onClick={requestCode}
               disabled={codeBusy}
-              className="btn-mint"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-6 py-3.5 text-base font-bold text-stone-950 shadow hover:bg-amber-300 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:opacity-70 sm:w-auto"
             >
-              {codeBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
-              Ajukan konsultasi
+              {codeBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : <KeyRound className="h-5 w-5" />}
+              Buat kode konsultasi
             </button>
           )}
           {codeError && (
-            <p role="alert" className="flex items-start gap-2 text-sm text-rose-800">
+            <p role="alert" className="flex items-start gap-2 rounded-xl bg-rose-50 p-3 text-sm text-rose-900">
               <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" /> {ERROR_MESSAGES[codeError]}
             </p>
           )}
         </div>
       )}
+
+      {/* Foto lidah setelah bagian kode, agar kode tetap di layar pertama. */}
+      {status.kind === 'saved' && saved && <TonguePhotos submissionId={saved.id} editToken={saved.editToken} />}
 
       {saved && status.kind !== 'saving' && (
         <div className="border-t border-lavender-100 pt-4">
@@ -183,6 +229,7 @@ export default function SubmissionPanel({ submission, onSaveAsNew, onRetry, onDe
           code={code?.code ?? null}
           busy={codeBusy}
           onCreateCode={() => void createCodeFromBar()}
+          onShowCode={jumpToCode}
           onSent={() => closeReminder('sent')}
           onSkip={() => closeReminder('skipped')}
         />
