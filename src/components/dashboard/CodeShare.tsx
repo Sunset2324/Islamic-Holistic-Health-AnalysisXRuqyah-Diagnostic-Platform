@@ -46,10 +46,14 @@ export default function CodeShare({ code, onSent }: CodeShareProps) {
             onClick={onSent}
             className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#1f8f4e] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#18733e] sm:w-auto"
           >
-            <MessageCircle className="h-4 w-4" /> Kirim kode ke WhatsApp konsultan
+            <MessageCircle className="h-4 w-4" /> {CLINIC_WHATSAPP ? 'Kirim kode ke WhatsApp konsultan' : 'Kirim kode lewat WhatsApp'}
           </a>
         )}
-        {link && <p className="text-stone-500">Yang terkirim hanya kode, tanpa nama atau keluhan Anda.</p>}
+        {link && (
+          <p className="text-stone-500">
+            Yang terkirim hanya kode, tanpa nama atau keluhan Anda.{!CLINIC_WHATSAPP && ' Pilih kontak konsultan Anda di WhatsApp.'}
+          </p>
+        )}
       </div>
     </div>
   );

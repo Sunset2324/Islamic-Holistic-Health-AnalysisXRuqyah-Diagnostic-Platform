@@ -114,17 +114,21 @@ export function useSubmission() {
     [remember],
   );
 
-  const requestCode = useCallback(async () => {
+  /** Menerbitkan kode baru (kode lama dicabut). Mengembalikan kodenya, atau null bila gagal. */
+  const requestCode = useCallback(async (): Promise<string | null> => {
     const current = savedRef.current;
-    if (!current) return;
+    if (!current) return null;
     setCodeBusy(true);
     setCodeError(null);
     try {
-      setCode(await issueAccessCode(current.id, current.editToken));
+      const issued = await issueAccessCode(current.id, current.editToken);
+      setCode(issued);
+      return issued.code;
     } catch (err) {
       const kind = err instanceof ApiError ? err.kind : 'server';
       if (kind === 'not_found') setStatus({ kind: 'blocked' });
       else setCodeError(kind);
+      return null;
     } finally {
       setCodeBusy(false);
     }

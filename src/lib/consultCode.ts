@@ -23,10 +23,45 @@ export function whatsAppMessage(code: string): string {
   return `Assalamu'alaikum, saya ingin berkonsultasi di My Herbalis. Kode konsultasi saya: ${code}`;
 }
 
-/** Tautan wa.me ke nomor klinik berisi kode saja. null bila nomor belum diatur atau kode tidak sah. */
+/**
+ * Tautan wa.me berisi kode saja. Dengan nomor klinik: langsung ke chat klinik. Tanpa nomor: WhatsApp terbuka dan
+ * pasien memilih sendiri kontak konsultannya. null hanya bila kode tidak sah.
+ */
 export function whatsAppLink(number: string | null, code: string): string | null {
-  if (!number || !CODE_PATTERN.test(code)) return null;
-  return `https://wa.me/${number}?text=${encodeURIComponent(whatsAppMessage(code))}`;
+  if (!CODE_PATTERN.test(code)) return null;
+  return `https://wa.me/${number ?? ''}?text=${encodeURIComponent(whatsAppMessage(code))}`;
+}
+
+export type WhatsAppOpenResult = 'opened' | 'blocked' | 'failed';
+
+/**
+ * Kirim kode via WhatsApp dengan satu ketukan: membuat/mengambil kode lalu membuka WhatsApp.
+ * Tab baru dibuka SEKETIKA saat diklik (sebelum menunggu server) agar tidak diblokir browser sebagai pop-up,
+ * lalu diarahkan ke wa.me setelah kode ada. Tab dilepas dari halaman ini (opener = null).
+ * - 'opened': WhatsApp dibuka.
+ * - 'blocked': browser menolak tab baru; kode sudah ada dan pasien bisa menekan tombol WhatsApp biasa.
+ * - 'failed': kode gagal dibuat; tab kosong ditutup.
+ */
+export async function openWhatsAppWithCode(
+  getCode: () => Promise<string | null>,
+  number: string | null = CLINIC_WHATSAPP,
+): Promise<WhatsAppOpenResult> {
+  const win = window.open('about:blank', '_blank');
+  if (win) win.opener = null;
+  let code: string | null = null;
+  try {
+    code = await getCode();
+  } catch {
+    code = null;
+  }
+  const link = code ? whatsAppLink(number, code) : null;
+  if (!link) {
+    win?.close();
+    return 'failed';
+  }
+  if (!win) return 'blocked';
+  win.location.replace(link);
+  return 'opened';
 }
 
 /** Hasil pindaian QR -> kode yang sah, atau null. Isi QR hanya kode; spasi/huruf kecil dirapikan. */
