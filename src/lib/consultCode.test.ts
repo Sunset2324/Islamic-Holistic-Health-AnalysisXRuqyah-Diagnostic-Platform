@@ -47,9 +47,10 @@ describe('tautan WhatsApp', () => {
     const text = new URL(link as string).searchParams.get('text') as string;
     expect(text).toContain(CODE);
     expect(text).toBe(whatsAppMessage(CODE));
+    expect(text).toBe(CODE); // pesan hanya berisi kode
   });
   it('tanpa nomor klinik: WhatsApp terbuka untuk memilih kontak, tetap berisi kode saja', () => {
-    expect(whatsAppLink(null, CODE)).toBe(`https://wa.me/?text=${encodeURIComponent(whatsAppMessage(CODE))}`);
+    expect(whatsAppLink(null, CODE)).toBe(`https://wa.me/?text=${CODE}`);
   });
   it('kode tidak sah -> null', () => {
     expect(whatsAppLink('6281234567890', 'ABC')).toBeNull();

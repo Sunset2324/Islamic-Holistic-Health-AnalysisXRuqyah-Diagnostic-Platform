@@ -19,8 +19,9 @@ export function normalizeWhatsAppNumber(raw: string | undefined): string | null 
 
 export const CLINIC_WHATSAPP = normalizeWhatsAppNumber(import.meta.env.VITE_CLINIC_WHATSAPP as string | undefined);
 
+/** Isi pesan WhatsApp: kode saja, tanpa salam atau teks lain (keputusan 28 November 2026). */
 export function whatsAppMessage(code: string): string {
-  return `Assalamu'alaikum, saya ingin berkonsultasi di My Herbalis. Kode konsultasi saya: ${code}`;
+  return code;
 }
 
 /**
